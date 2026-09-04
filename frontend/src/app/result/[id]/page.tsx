@@ -111,7 +111,7 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
                 </Button>
               }
             />
-            <SheetContent className="w-[400px] sm:w-[540px] p-0">
+            <SheetContent className="w-[400px] sm:w-[540px] p-0 h-full max-h-screen overflow-hidden flex flex-col">
               <ChatPanel jobId={job.id} />
             </SheetContent>
           </Sheet>
