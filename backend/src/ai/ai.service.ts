@@ -1,80 +1,111 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { GeminiService } from './gemini.service';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class AiService {
+  private readonly logger = new Logger(AiService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly gemini: GeminiService,
   ) {}
 
-  async sendMessage(jobId: string, userMessage: string) {
-    // Find the job and its content
-    const job = await this.prisma.scrapeJob.findUnique({
-      where: { id: jobId },
-    });
+  async sendMessage(
+    jobId: string,
+    userMessage: string,
+    clientContent?: string,
+    clientHistory?: Array<{ role: string; content: string }>,
+  ) {
+    let content = clientContent || '';
+    let history: Array<{ role: string; content: string }> = clientHistory || [];
 
-    if (!job) throw new NotFoundException('Job não encontrado');
-
-    // Save user message
-    await this.prisma.chatMessage.create({
-      data: {
-        jobId,
-        role: 'user',
-        content: userMessage,
-      },
-    });
-
-    const content = job.contentMd || (job.contentJson ? JSON.stringify(job.contentJson, null, 2) : '');
-
-    // If the scraped document has no text or is empty
-    if (!content || content.trim().length < 20) {
-      return this.prisma.chatMessage.create({
-        data: {
-          jobId,
-          role: 'assistant',
-          content: 'Aviso: Esta extração não gerou conteúdo textual suficiente para responder perguntas (a página pode ser um leitor dinâmico ou estar vazia). Tente extrair novamente usando o modo "Scrape URL" com o link canônico do artigo ou PDF direto.',
-        },
-      });
+    // If content wasn't provided by client, try to read from database if available
+    if (!content) {
+      try {
+        const job = await this.prisma.scrapeJob.findUnique({
+          where: { id: jobId },
+        });
+        if (job) {
+          content =
+            job.contentMd ||
+            (job.contentJson ? JSON.stringify(job.contentJson, null, 2) : '');
+        }
+      } catch (e: any) {
+        this.logger.warn(`Could not read job from database: ${e.message}`);
+      }
     }
 
-    // Get chat history
-    const history = await this.prisma.chatMessage.findMany({
-      where: { jobId },
-      orderBy: { createdAt: 'asc' },
-      take: 20, // Last 20 messages for context
-    });
+    // If chat history wasn't provided by client, try to read from database
+    if (history.length === 0) {
+      try {
+        const dbHistory = await this.prisma.chatMessage.findMany({
+          where: { jobId },
+          orderBy: { createdAt: 'asc' },
+          take: 20,
+        });
+        history = dbHistory.map((m) => ({ role: m.role, content: m.content }));
+      } catch {
+        // Fallback: empty history
+      }
+    }
+
+    // Try to record user message in database if db is reachable
+    try {
+      await this.prisma.chatMessage.create({
+        data: { jobId, role: 'user', content: userMessage },
+      });
+    } catch {
+      // Stateless mode: non-blocking
+    }
+
+    // Check if content exists
+    if (!content || content.trim().length < 20) {
+      const notice =
+        'Aviso: Esta extração não gerou conteúdo textual suficiente para responder perguntas (a página pode ser um leitor dinâmico ou estar vazia). Tente extrair novamente usando o modo "Scrape URL" com o link canônico do artigo ou PDF direto.';
+      return {
+        id: randomUUID(),
+        jobId,
+        role: 'assistant',
+        content: notice,
+        createdAt: new Date().toISOString(),
+      };
+    }
 
     // Get AI response
     const aiResponse = await this.gemini.chatWithContent(
       content,
       userMessage,
-      history.slice(0, -1).map((m) => ({ role: m.role, content: m.content })),
+      history,
     );
 
-    // Save assistant message
-    const assistantMessage = await this.prisma.chatMessage.create({
-      data: {
-        jobId,
-        role: 'assistant',
-        content: aiResponse,
-      },
-    });
+    // Try to save assistant message in database if db is reachable
+    try {
+      await this.prisma.chatMessage.create({
+        data: { jobId, role: 'assistant', content: aiResponse },
+      });
+    } catch {
+      // Stateless mode: non-blocking
+    }
 
-    return assistantMessage;
+    return {
+      id: randomUUID(),
+      jobId,
+      role: 'assistant',
+      content: aiResponse,
+      createdAt: new Date().toISOString(),
+    };
   }
 
   async getMessages(jobId: string) {
-    const job = await this.prisma.scrapeJob.findUnique({
-      where: { id: jobId },
-    });
-
-    if (!job) throw new NotFoundException('Job não encontrado');
-
-    return this.prisma.chatMessage.findMany({
-      where: { jobId },
-      orderBy: { createdAt: 'asc' },
-    });
+    try {
+      return await this.prisma.chatMessage.findMany({
+        where: { jobId },
+        orderBy: { createdAt: 'asc' },
+      });
+    } catch {
+      return [];
+    }
   }
 }

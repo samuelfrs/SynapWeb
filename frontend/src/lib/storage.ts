@@ -1,0 +1,87 @@
+import { ScrapeJob, ChatMessage } from './api';
+
+const JOBS_KEY = 'synapweb_jobs';
+const CHAT_PREFIX = 'synapweb_chat_';
+
+export function getLocalJobs(): ScrapeJob[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(JOBS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    console.error('Error reading jobs from localStorage:', e);
+    return [];
+  }
+}
+
+export function getLocalJob(id: string): ScrapeJob | null {
+  const jobs = getLocalJobs();
+  return jobs.find((j) => j.id === id) || null;
+}
+
+export function saveLocalJob(job: ScrapeJob): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const jobs = getLocalJobs();
+    const existingIndex = jobs.findIndex((j) => j.id === job.id);
+    if (existingIndex >= 0) {
+      jobs[existingIndex] = job;
+    } else {
+      jobs.unshift(job);
+    }
+    // Limit to latest 50 scrapes to prevent exceeding browser storage quota
+    if (jobs.length > 50) {
+      const removed = jobs.pop();
+      if (removed) localStorage.removeItem(CHAT_PREFIX + removed.id);
+    }
+    localStorage.setItem(JOBS_KEY, JSON.stringify(jobs));
+  } catch (e) {
+    console.error('Error saving job to localStorage:', e);
+  }
+}
+
+export function deleteLocalJob(id: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const jobs = getLocalJobs().filter((j) => j.id !== id);
+    localStorage.setItem(JOBS_KEY, JSON.stringify(jobs));
+    localStorage.removeItem(CHAT_PREFIX + id);
+  } catch (e) {
+    console.error('Error deleting job from localStorage:', e);
+  }
+}
+
+export function clearLocalJobs(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const jobs = getLocalJobs();
+    for (const j of jobs) {
+      localStorage.removeItem(CHAT_PREFIX + j.id);
+    }
+    localStorage.removeItem(JOBS_KEY);
+  } catch (e) {
+    console.error('Error clearing jobs:', e);
+  }
+}
+
+export function getLocalChatMessages(jobId: string): ChatMessage[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(CHAT_PREFIX + jobId);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    console.error('Error reading chat messages from localStorage:', e);
+    return [];
+  }
+}
+
+export function saveLocalChatMessage(jobId: string, message: ChatMessage): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const messages = getLocalChatMessages(jobId);
+    messages.push(message);
+    localStorage.setItem(CHAT_PREFIX + jobId, JSON.stringify(messages));
+  } catch (e) {
+    console.error('Error saving chat message to localStorage:', e);
+  }
+}

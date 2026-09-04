@@ -12,9 +12,10 @@ import remarkGfm from 'remark-gfm';
 
 interface ChatPanelProps {
   jobId: string;
+  content?: string;
 }
 
-export function ChatPanel({ jobId }: ChatPanelProps) {
+export function ChatPanel({ jobId, content }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -50,7 +51,8 @@ export function ChatPanel({ jobId }: ChatPanelProps) {
     setMessages((prev) => [...prev, tempUserMsg]);
 
     try {
-      const assistantMessage = await sendChatMessage(jobId, userMessage);
+      const history = messages.map((m) => ({ role: m.role, content: m.content }));
+      const assistantMessage = await sendChatMessage(jobId, userMessage, content, history);
       // Replace temp message and add assistant response
       setMessages((prev) => {
         const withoutTemp = prev.filter((m) => m.id !== tempUserMsg.id);

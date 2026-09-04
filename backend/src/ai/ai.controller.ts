@@ -21,7 +21,7 @@ export class AiController {
     @Param('jobId') jobId: string,
     @Body() dto: SendMessageDto,
   ) {
-    return this.aiService.sendMessage(jobId, dto.message);
+    return this.aiService.sendMessage(jobId, dto.message, dto.content, dto.history);
   }
 
   @Get(':jobId/messages')
