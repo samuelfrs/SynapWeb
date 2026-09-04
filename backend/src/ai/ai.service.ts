@@ -16,9 +16,6 @@ export class AiService {
     });
 
     if (!job) throw new NotFoundException('Job não encontrado');
-    if (!job.contentMd && !job.contentJson) {
-      throw new NotFoundException('Job não possui conteúdo para chat');
-    }
 
     // Save user message
     await this.prisma.chatMessage.create({
@@ -29,15 +26,25 @@ export class AiService {
       },
     });
 
+    const content = job.contentMd || (job.contentJson ? JSON.stringify(job.contentJson, null, 2) : '');
+
+    // If the scraped document has no text or is empty
+    if (!content || content.trim().length < 20) {
+      return this.prisma.chatMessage.create({
+        data: {
+          jobId,
+          role: 'assistant',
+          content: 'Aviso: Esta extração não gerou conteúdo textual suficiente para responder perguntas (a página pode ser um leitor dinâmico ou estar vazia). Tente extrair novamente usando o modo "Scrape URL" com o link canônico do artigo ou PDF direto.',
+        },
+      });
+    }
+
     // Get chat history
     const history = await this.prisma.chatMessage.findMany({
       where: { jobId },
       orderBy: { createdAt: 'asc' },
       take: 20, // Last 20 messages for context
     });
-
-    // Determine content to use
-    const content = job.contentMd || JSON.stringify(job.contentJson, null, 2);
 
     // Get AI response
     const aiResponse = await this.gemini.chatWithContent(

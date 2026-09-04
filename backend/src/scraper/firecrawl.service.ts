@@ -24,7 +24,17 @@ export class FirecrawlService {
     };
   }
 
-  async scrape(url: string): Promise<FirecrawlScrapeResult> {
+  private normalizeUrl(rawUrl: string): string {
+    let url = rawUrl.trim();
+    // ACM Digital Library epdf viewer embeds PDF dynamically; the canonical /doi/ page has the full open-access text
+    if (url.includes('dl.acm.org/doi/epdf/')) {
+      url = url.replace('dl.acm.org/doi/epdf/', 'dl.acm.org/doi/');
+    }
+    return url;
+  }
+
+  async scrape(rawUrl: string): Promise<FirecrawlScrapeResult> {
+    const url = this.normalizeUrl(rawUrl);
     try {
       const response = await fetch(`${this.apiUrl}/scrape`, {
         method: 'POST',
@@ -32,6 +42,8 @@ export class FirecrawlService {
         body: JSON.stringify({
           url,
           formats: ['markdown'],
+          timeout: 60000,
+          waitFor: 3000,
         }),
       });
 
@@ -53,7 +65,8 @@ export class FirecrawlService {
     }
   }
 
-  async crawl(url: string, limit: number = 10): Promise<FirecrawlCrawlResult> {
+  async crawl(rawUrl: string, limit: number = 10): Promise<FirecrawlCrawlResult> {
+    const url = this.normalizeUrl(rawUrl);
     try {
       const response = await fetch(`${this.apiUrl}/crawl`, {
         method: 'POST',
@@ -63,6 +76,8 @@ export class FirecrawlService {
           limit,
           scrapeOptions: {
             formats: ['markdown'],
+            timeout: 60000,
+            waitFor: 3000,
           },
         }),
       });
@@ -74,10 +89,45 @@ export class FirecrawlService {
       }
 
       const data = await response.json();
+      const jobId = data.id;
+
+      // Poll Firecrawl until crawl completes (up to 60 seconds)
+      const maxAttempts = 20;
+      let pages: Array<{ markdown: string; metadata: Record<string, any> }> = [];
+
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+
+        const checkRes = await fetch(`${this.apiUrl}/crawl/${jobId}`, {
+          headers: this.getHeaders(),
+        });
+
+        if (checkRes.ok) {
+          const checkData = await checkRes.json();
+          if (checkData.status === 'completed') {
+            pages = checkData.data || [];
+            break;
+          }
+          if (checkData.status === 'failed' || checkData.status === 'cancelled') {
+            this.logger.error(`Crawl failed: ${checkData.error}`);
+            break;
+          }
+        }
+      }
+
+      // If crawl returned 0 pages (e.g. single URL or blocked recursion), fallback to direct scrape of the URL
+      if (pages.length === 0) {
+        this.logger.log(`Crawl returned 0 pages, falling back to single scrape for ${url}`);
+        const singleScrape = await this.scrape(url);
+        if (singleScrape.markdown) {
+          pages = [{ markdown: singleScrape.markdown, metadata: singleScrape.metadata }];
+        }
+      }
+
       return {
-        jobId: data.id,
-        status: data.status,
-        data: data.data,
+        jobId,
+        status: 'completed',
+        data: pages,
       };
     } catch (error) {
       if (error instanceof InternalServerErrorException) throw error;
