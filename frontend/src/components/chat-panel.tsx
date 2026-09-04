@@ -84,23 +84,25 @@ export function ChatPanel({ jobId }: ChatPanelProps) {
   };
 
   return (
-    <div className="flex flex-col h-full max-h-screen overflow-hidden bg-background">
+    <div className="grid grid-rows-[auto_minmax(0,1fr)_auto] h-screen max-h-screen w-full overflow-hidden bg-background">
       {/* Header */}
-      <div className="p-4 border-b shrink-0">
-        <h3 className="font-semibold flex items-center gap-2">
-          <Bot className="h-5 w-5 text-primary" />
-          Chat com o Documento
-        </h3>
-        <p className="text-xs text-muted-foreground mt-1">
-          Faça perguntas sobre o conteúdo extraído
-        </p>
+      <div className="p-4 border-b flex items-center justify-between">
+        <div>
+          <h3 className="font-semibold flex items-center gap-2">
+            <Bot className="h-5 w-5 text-primary" />
+            Chat com o Documento
+          </h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Faça perguntas sobre o conteúdo extraído
+          </p>
+        </div>
       </div>
 
-      {/* Messages - scrollable container with min-h-0 */}
-      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4" ref={scrollRef}>
+      {/* Messages - guaranteed scroll area constrained by grid */}
+      <div className="min-h-0 overflow-y-auto p-4 space-y-4" ref={scrollRef}>
         {messages.length === 0 ? (
-          <div className="text-center text-muted-foreground text-sm py-10">
-            <Bot className="h-10 w-10 mx-auto mb-3 opacity-50" />
+          <div className="text-center text-muted-foreground text-sm py-12">
+            <Bot className="h-10 w-10 mx-auto mb-3 opacity-40" />
             <p>Faça uma pergunta sobre o documento para começar</p>
           </div>
         ) : (
@@ -149,10 +151,8 @@ export function ChatPanel({ jobId }: ChatPanelProps) {
         )}
       </div>
 
-      <Separator className="shrink-0" />
-
-      {/* Input */}
-      <div className="p-4 bg-background shrink-0">
+      {/* Input - pinned at bottom of grid */}
+      <div className="border-t p-4 bg-background">
         <div className="flex gap-2">
           <Textarea
             placeholder="Pergunte sobre o documento..."
