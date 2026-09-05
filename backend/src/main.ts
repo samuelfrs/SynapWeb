@@ -70,6 +70,13 @@ export default async function handler(req: any, res: any) {
   }
 }
 
+// Universal compatibility for Vercel Serverless (CJS + ESM)
+(handler as any).default = handler;
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = handler;
+  module.exports.default = handler;
+}
+
 // Local development
 if (!process.env.VERCEL && process.env.NODE_ENV !== 'production') {
   (async () => {
