@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { HowToUseDialog } from '@/components/how-to-use-dialog';
 import { scrapeUrl, crawlDomain, extractJson } from '@/lib/api';
 
 type Mode = 'SCRAPE' | 'CRAWL' | 'EXTRACT';
@@ -80,6 +81,19 @@ export default function PlaygroundPage() {
         <p className="text-muted-foreground text-lg">
           Converta qualquer site, documentação ou PDF em conteúdo limpo para LLMs
         </p>
+        <div className="pt-1">
+          <HowToUseDialog
+            trigger={
+              <button
+                type="button"
+                className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3.5 py-1 text-xs font-medium text-primary hover:bg-primary/10 transition-colors cursor-pointer shadow-xs"
+              >
+                <span>💡 Como usar em 5 passos</span>
+                <span className="text-muted-foreground">→</span>
+              </button>
+            }
+          />
+        </div>
       </div>
 
       {/* Mode Selector */}
