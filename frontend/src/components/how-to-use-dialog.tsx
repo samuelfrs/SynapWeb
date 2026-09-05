@@ -138,8 +138,8 @@ const steps: Step[] = [
         text: 'A IA utiliza exclusivamente o documento extraído como fonte de conhecimento, evitando alucinações.',
       },
       {
-        title: 'Painel com Rolagem Travada:',
-        text: 'O campo de digitação fica permanentemente visível no rodapé, permitindo enviar mensagens livremente sem perder a posição.',
+        title: 'Memória Contextual da Conversa:',
+        text: 'O chat lembra das mensagens anteriores, permitindo fazer perguntas complementares, aprofundamentos ou pedir explicações passo a passo.',
       },
       {
         title: 'Fallback Automático:',
