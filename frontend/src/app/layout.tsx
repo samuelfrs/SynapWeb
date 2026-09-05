@@ -8,6 +8,11 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'SynapWeb — Web-to-LLM Intelligence Engine',
   description: 'Converta qualquer site, documentação ou PDF em Markdown/JSON limpo para LLMs',
+  icons: {
+    icon: '/icon.svg',
+    shortcut: '/icon.svg',
+    apple: '/icon.svg',
+  },
 };
 
 export default function RootLayout({
