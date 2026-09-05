@@ -2,6 +2,14 @@
 
 > Motor inteligente de Web Scraping & Crawling que converte qualquer site, documentação técnica ou PDF da web em **Markdown limpo** ou **JSON estruturado** pronto para alimentar LLMs e pipelines de RAG, com chat integrado via Google Gemini e arquitetura **Local-First (Zero Database)**.
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new)
+[![GitHub License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Next.js 15](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org)
+[![NestJS 11](https://img.shields.io/badge/NestJS-11-red?logo=nestjs)](https://nestjs.com)
+
+🔗 **Acesse a Aplicação em Produção:** [https://synapwebv1.vercel.app](https://synapwebv1.vercel.app)  
+📡 **API Endpoint:** [https://synap-web-api.vercel.app](https://synap-web-api.vercel.app)
+
 ---
 
 ## ✨ Funcionalidades Principais
@@ -117,6 +125,28 @@ Abra dois terminais na raiz do projeto:
   ```
 
 Abra seu navegador em [http://localhost:3000](http://localhost:3000).
+
+---
+
+## ☁️ Como Fazer Deploy na Vercel
+
+O SynapWeb foi desenvolvido em formato monorepo serverless:
+
+1. **Deploy do Backend (API NestJS):**
+   - Importe o repositório na Vercel.
+   - Nome do projeto: `synap-web-api`.
+   - **Root Directory:** selecione `backend`.
+   - **Framework Preset:** `Other`.
+   - Clique em **Deploy** e copie o domínio gerado (ex: `https://synap-web-api.vercel.app`).
+
+2. **Deploy do Frontend (Next.js 15):**
+   - Importe o mesmo repositório na Vercel.
+   - Nome do projeto: `synap-web-frontend`.
+   - **Root Directory:** selecione `frontend`.
+   - **Framework Preset:** `Next.js`.
+   - Em **Environment Variables**, adicione:
+     - `NEXT_PUBLIC_API_URL` = `https://synap-web-api.vercel.app` *(tipo Config)*.
+   - Clique em **Deploy**.
 
 ---
 
