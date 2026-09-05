@@ -11,16 +11,28 @@ interface FirecrawlCrawlResult {
   data?: Array<{ markdown: string; metadata: Record<string, any> }>;
 }
 
+export interface FirecrawlExtractResult {
+  json: any;
+  markdown: string;
+  metadata: Record<string, any>;
+}
+
 @Injectable()
 export class FirecrawlService {
   private readonly logger = new Logger(FirecrawlService.name);
   private readonly apiUrl = 'https://api.firecrawl.dev/v1';
   private readonly apiKey = process.env.FIRECRAWL_API_KEY;
 
-  private getHeaders() {
+  private getHeaders(customApiKey?: string) {
+    const key = customApiKey || this.apiKey;
+    if (!key) {
+      throw new InternalServerErrorException(
+        'Nenhuma chave da API Firecrawl configurada. Configure sua chave em "Chaves de API" no topo da página.',
+      );
+    }
     return {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${this.apiKey}`,
+      Authorization: `Bearer ${key}`,
     };
   }
 
@@ -33,12 +45,12 @@ export class FirecrawlService {
     return url;
   }
 
-  async scrape(rawUrl: string): Promise<FirecrawlScrapeResult> {
+  async scrape(rawUrl: string, customApiKey?: string): Promise<FirecrawlScrapeResult> {
     const url = this.normalizeUrl(rawUrl);
     try {
       const response = await fetch(`${this.apiUrl}/scrape`, {
         method: 'POST',
-        headers: this.getHeaders(),
+        headers: this.getHeaders(customApiKey),
         body: JSON.stringify({
           url,
           formats: ['markdown'],
@@ -65,12 +77,12 @@ export class FirecrawlService {
     }
   }
 
-  async crawl(rawUrl: string, limit: number = 10): Promise<FirecrawlCrawlResult> {
+  async crawl(rawUrl: string, limit: number = 10, customApiKey?: string): Promise<FirecrawlCrawlResult> {
     const url = this.normalizeUrl(rawUrl);
     try {
       const response = await fetch(`${this.apiUrl}/crawl`, {
         method: 'POST',
-        headers: this.getHeaders(),
+        headers: this.getHeaders(customApiKey),
         body: JSON.stringify({
           url,
           limit,
@@ -99,7 +111,7 @@ export class FirecrawlService {
         await new Promise((resolve) => setTimeout(resolve, 3000));
 
         const checkRes = await fetch(`${this.apiUrl}/crawl/${jobId}`, {
-          headers: this.getHeaders(),
+          headers: this.getHeaders(customApiKey),
         });
 
         if (checkRes.ok) {
@@ -118,7 +130,7 @@ export class FirecrawlService {
       // If crawl returned 0 pages (e.g. single URL or blocked recursion), fallback to direct scrape of the URL
       if (pages.length === 0) {
         this.logger.log(`Crawl returned 0 pages, falling back to single scrape for ${url}`);
-        const singleScrape = await this.scrape(url);
+        const singleScrape = await this.scrape(url, customApiKey);
         if (singleScrape.markdown) {
           pages = [{ markdown: singleScrape.markdown, metadata: singleScrape.metadata }];
         }
@@ -136,29 +148,51 @@ export class FirecrawlService {
     }
   }
 
-  async extract(url: string, prompt?: string, schema?: Record<string, any>): Promise<any> {
+  async extract(
+    rawUrl: string,
+    prompt?: string,
+    schema?: Record<string, any>,
+    customApiKey?: string,
+  ): Promise<FirecrawlExtractResult> {
+    const url = this.normalizeUrl(rawUrl);
     try {
-      const body: Record<string, any> = {
-        urls: [url],
+      const jsonFormat: Record<string, any> = {
+        type: 'json',
       };
 
-      if (prompt) body.prompt = prompt;
-      if (schema) body.schema = schema;
+      if (schema && Object.keys(schema).length > 0) {
+        jsonFormat.schema = schema;
+      } else if (prompt && prompt.trim()) {
+        jsonFormat.prompt = prompt.trim();
+      } else {
+        jsonFormat.prompt =
+          'Extract all key information, headings, main sections and data into structured JSON';
+      }
 
-      const response = await fetch(`${this.apiUrl}/extract`, {
+      // Modern Firecrawl v2 scrape endpoint supports synchronous structured JSON extraction
+      const response = await fetch('https://api.firecrawl.dev/v2/scrape', {
         method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify(body),
+        headers: this.getHeaders(customApiKey),
+        body: JSON.stringify({
+          url,
+          formats: ['markdown', jsonFormat],
+          timeout: 60000,
+          waitFor: 3000,
+        }),
       });
 
       if (!response.ok) {
         const error = await response.text();
-        this.logger.error(`Firecrawl extract error: ${error}`);
+        this.logger.error(`Firecrawl v2 extract error: ${error}`);
         throw new InternalServerErrorException('Erro na extração JSON via Firecrawl');
       }
 
       const data = await response.json();
-      return data.data;
+      return {
+        json: data.data?.json || null,
+        markdown: data.data?.markdown || '',
+        metadata: data.data?.metadata || {},
+      };
     } catch (error) {
       if (error instanceof InternalServerErrorException) throw error;
       this.logger.error(`Firecrawl extract failed: ${error}`);

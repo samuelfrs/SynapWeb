@@ -73,9 +73,18 @@ function JsonNode({ name, value, depth = 0 }: { name?: string; value: any; depth
 }
 
 export function JsonTreeViewer({ data }: JsonTreeViewerProps) {
+  let parsed = data;
+  if (typeof data === 'string') {
+    try {
+      parsed = JSON.parse(data);
+    } catch {
+      parsed = data;
+    }
+  }
+
   return (
     <div className="rounded-lg bg-muted/50 p-4 font-mono text-xs overflow-auto max-h-[600px]">
-      <JsonNode value={data} />
+      <JsonNode value={parsed} />
     </div>
   );
 }

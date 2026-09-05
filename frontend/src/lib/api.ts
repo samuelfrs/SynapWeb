@@ -4,14 +4,25 @@ import {
   saveLocalJob,
   getLocalChatMessages,
   saveLocalChatMessage,
+  getStoredApiKeys,
 } from './storage';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  const keys = getStoredApiKeys();
+  const customHeaders: Record<string, string> = {};
+  if (keys.firecrawlKey?.trim()) {
+    customHeaders['x-firecrawl-key'] = keys.firecrawlKey.trim();
+  }
+  if (keys.geminiKey?.trim()) {
+    customHeaders['x-gemini-key'] = keys.geminiKey.trim();
+  }
+
   const response = await fetch(`${API_URL}/api${endpoint}`, {
     headers: {
       'Content-Type': 'application/json',
+      ...customHeaders,
       ...options?.headers,
     },
     ...options,

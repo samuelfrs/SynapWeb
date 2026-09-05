@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Zap, History } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ApiKeysDialog } from '@/components/api-keys-dialog';
 
 export function Header() {
   return (
@@ -10,7 +10,8 @@ export function Header() {
           <Zap className="h-5 w-5 text-primary" />
           <span>SynapWeb</span>
         </Link>
-        <nav className="flex items-center gap-2">
+        <nav className="flex items-center gap-3">
+          <ApiKeysDialog />
           <Link href="/history" className="inline-flex items-center gap-2 rounded-lg px-2.5 h-7 text-sm font-medium hover:bg-muted hover:text-foreground transition-all">
             <History className="h-4 w-4" />
             Histórico

@@ -4,6 +4,7 @@ import {
   Get,
   Body,
   Param,
+  Headers,
   HttpCode,
   HttpStatus,
   NotFoundException,
@@ -17,20 +18,34 @@ export class ScraperController {
 
   @Post()
   @HttpCode(HttpStatus.OK)
-  async scrapeUrl(@Body() dto: ScrapeUrlDto) {
-    return this.scraperService.scrapeUrl(dto);
+  async scrapeUrl(
+    @Body() dto: ScrapeUrlDto,
+    @Headers('x-firecrawl-key') customFirecrawlKey?: string,
+  ) {
+    return this.scraperService.scrapeUrl(dto, customFirecrawlKey);
   }
 
   @Post('crawl')
   @HttpCode(HttpStatus.OK)
-  async crawlDomain(@Body() dto: CrawlDomainDto) {
-    return this.scraperService.crawlDomain(dto);
+  async crawlDomain(
+    @Body() dto: CrawlDomainDto,
+    @Headers('x-firecrawl-key') customFirecrawlKey?: string,
+  ) {
+    return this.scraperService.crawlDomain(dto, customFirecrawlKey);
   }
 
   @Post('extract')
   @HttpCode(HttpStatus.OK)
-  async extractJson(@Body() dto: ExtractJsonDto) {
-    return this.scraperService.extractJson(dto);
+  async extractJson(
+    @Body() dto: ExtractJsonDto,
+    @Headers('x-firecrawl-key') customFirecrawlKey?: string,
+    @Headers('x-gemini-key') customGeminiKey?: string,
+  ) {
+    return this.scraperService.extractJson(
+      dto,
+      customFirecrawlKey,
+      customGeminiKey,
+    );
   }
 
   @Get('jobs')

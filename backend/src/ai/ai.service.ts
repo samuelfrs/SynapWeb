@@ -17,6 +17,7 @@ export class AiService {
     userMessage: string,
     clientContent?: string,
     clientHistory?: Array<{ role: string; content: string }>,
+    customGeminiKey?: string,
   ) {
     let content = clientContent || '';
     let history: Array<{ role: string; content: string }> = clientHistory || [];
@@ -78,6 +79,7 @@ export class AiService {
       content,
       userMessage,
       history,
+      customGeminiKey,
     );
 
     // Try to save assistant message in database if db is reachable

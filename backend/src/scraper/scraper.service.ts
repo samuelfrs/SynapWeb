@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { FirecrawlService } from './firecrawl.service';
+import { GeminiService } from '../ai/gemini.service';
 import { ScrapeUrlDto, CrawlDomainDto, ExtractJsonDto } from './dto/scrape.dto';
 import { randomUUID } from 'crypto';
 
@@ -11,9 +12,10 @@ export class ScraperService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly firecrawl: FirecrawlService,
+    private readonly gemini: GeminiService,
   ) {}
 
-  async scrapeUrl(dto: ScrapeUrlDto) {
+  async scrapeUrl(dto: ScrapeUrlDto, customFirecrawlKey?: string) {
     const jobId = randomUUID();
     const now = new Date().toISOString();
 
@@ -33,7 +35,7 @@ export class ScraperService {
     }
 
     try {
-      const result = await this.firecrawl.scrape(dto.url);
+      const result = await this.firecrawl.scrape(dto.url, customFirecrawlKey);
 
       const jobData = {
         id: jobId,
@@ -78,7 +80,7 @@ export class ScraperService {
     }
   }
 
-  async crawlDomain(dto: CrawlDomainDto) {
+  async crawlDomain(dto: CrawlDomainDto, customFirecrawlKey?: string) {
     const jobId = randomUUID();
     const now = new Date().toISOString();
 
@@ -95,7 +97,7 @@ export class ScraperService {
     } catch {}
 
     try {
-      const result = await this.firecrawl.crawl(dto.url, dto.limit);
+      const result = await this.firecrawl.crawl(dto.url, dto.limit, customFirecrawlKey);
 
       const combinedMarkdown =
         result.data
@@ -149,7 +151,11 @@ export class ScraperService {
     }
   }
 
-  async extractJson(dto: ExtractJsonDto) {
+  async extractJson(
+    dto: ExtractJsonDto,
+    customFirecrawlKey?: string,
+    customGeminiKey?: string,
+  ) {
     const jobId = randomUUID();
     const now = new Date().toISOString();
 
@@ -166,7 +172,39 @@ export class ScraperService {
     } catch {}
 
     try {
-      const result = await this.firecrawl.extract(dto.url, dto.prompt, dto.schema);
+      const result = await this.firecrawl.extract(
+        dto.url,
+        dto.prompt,
+        dto.schema,
+        customFirecrawlKey,
+      );
+
+      let extractedJson = result.json;
+
+      // If Firecrawl didn't return json or returned empty, fallback to Gemini on markdown
+      if (
+        (!extractedJson ||
+          (typeof extractedJson === 'object' &&
+            Object.keys(extractedJson).length === 0)) &&
+        result.markdown
+      ) {
+        this.logger.log(
+          `Firecrawl json was empty, using Gemini fallback for ${dto.url}`,
+        );
+        try {
+          const geminiJson = await this.gemini.extractJsonFromContent(
+            result.markdown,
+            dto.prompt,
+            dto.schema,
+            customGeminiKey,
+          );
+          if (geminiJson) {
+            extractedJson = geminiJson;
+          }
+        } catch (geminiErr: any) {
+          this.logger.warn(`Gemini JSON fallback failed: ${geminiErr.message}`);
+        }
+      }
 
       const jobData = {
         id: jobId,
@@ -174,9 +212,9 @@ export class ScraperService {
         mode: 'EXTRACT' as const,
         format: 'JSON' as const,
         status: 'COMPLETED' as const,
-        contentMd: null,
-        contentJson: result,
-        metadata: {},
+        contentMd: result.markdown || null,
+        contentJson: extractedJson || {},
+        metadata: result.metadata || {},
         error: null,
         createdAt: now,
         updatedAt: new Date().toISOString(),
@@ -187,7 +225,9 @@ export class ScraperService {
           where: { id: jobId },
           data: {
             status: 'COMPLETED',
-            contentJson: result,
+            contentMd: result.markdown || undefined,
+            contentJson: extractedJson || {},
+            metadata: result.metadata as any,
           },
         });
       } catch {}

@@ -20,6 +20,7 @@ const createServer = async () => {
   app.enableCors({
     origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
     credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-firecrawl-key', 'x-gemini-key'],
   });
   
   app.useGlobalPipes(
@@ -49,6 +50,7 @@ if (process.env.NODE_ENV !== 'production') {
     app.enableCors({
       origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
       credentials: true,
+      allowedHeaders: ['Content-Type', 'Authorization', 'x-firecrawl-key', 'x-gemini-key'],
     });
     app.useGlobalPipes(
       new ValidationPipe({

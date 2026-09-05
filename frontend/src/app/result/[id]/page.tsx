@@ -126,7 +126,7 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
       )}
 
       {/* Content Tabs */}
-      <Tabs defaultValue="markdown" className="w-full">
+      <Tabs defaultValue={job.mode === 'EXTRACT' ? 'json' : 'markdown'} className="w-full">
         <TabsList>
           <TabsTrigger value="markdown" className="gap-2">
             <FileText className="h-4 w-4" />

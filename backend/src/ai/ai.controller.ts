@@ -4,6 +4,7 @@ import {
   Get,
   Body,
   Param,
+  Headers,
   HttpCode,
   HttpStatus,
   NotFoundException,
@@ -20,8 +21,15 @@ export class AiController {
   async sendMessage(
     @Param('jobId') jobId: string,
     @Body() dto: SendMessageDto,
+    @Headers('x-gemini-key') customGeminiKey?: string,
   ) {
-    return this.aiService.sendMessage(jobId, dto.message, dto.content, dto.history);
+    return this.aiService.sendMessage(
+      jobId,
+      dto.message,
+      dto.content,
+      dto.history,
+      customGeminiKey,
+    );
   }
 
   @Get(':jobId/messages')

@@ -85,3 +85,39 @@ export function saveLocalChatMessage(jobId: string, message: ChatMessage): void 
     console.error('Error saving chat message to localStorage:', e);
   }
 }
+
+// BYOK (Bring Your Own Key) Helpers
+const API_KEYS_STORAGE = 'synapweb_api_keys';
+
+export interface StoredApiKeys {
+  firecrawlKey: string;
+  geminiKey: string;
+}
+
+export function getStoredApiKeys(): StoredApiKeys {
+  if (typeof window === 'undefined') return { firecrawlKey: '', geminiKey: '' };
+  try {
+    const raw = localStorage.getItem(API_KEYS_STORAGE);
+    return raw ? JSON.parse(raw) : { firecrawlKey: '', geminiKey: '' };
+  } catch {
+    return { firecrawlKey: '', geminiKey: '' };
+  }
+}
+
+export function saveStoredApiKeys(keys: StoredApiKeys): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(API_KEYS_STORAGE, JSON.stringify(keys));
+  } catch (e) {
+    console.error('Error saving API keys:', e);
+  }
+}
+
+export function clearStoredApiKeys(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(API_KEYS_STORAGE);
+  } catch (e) {
+    console.error('Error clearing API keys:', e);
+  }
+}
