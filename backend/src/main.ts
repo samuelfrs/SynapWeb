@@ -55,13 +55,19 @@ const createServer = async () => {
 
 // Vercel Serverless Handler
 export default async function handler(req: any, res: any) {
-  await createServer();
-  return new Promise((resolve, reject) => {
-    res.on('finish', resolve);
-    res.on('close', resolve);
-    res.on('error', reject);
+  try {
+    await createServer();
     server(req, res);
-  });
+  } catch (err: any) {
+    console.error('CRITICAL SERVERLESS BOOTSTRAP ERROR:', err);
+    if (!res.headersSent) {
+      res.status(500).json({
+        error: 'FUNCTION_BOOTSTRAP_ERROR',
+        message: err?.message || String(err),
+        stack: err?.stack,
+      });
+    }
+  }
 }
 
 // Local development
