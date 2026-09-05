@@ -10,6 +10,22 @@ import express, { Express } from 'express';
 const server: Express = express();
 let isReady = false;
 
+// Root landing route directly on express
+server.get('/', (req, res) => {
+  res.json({
+    name: 'SynapWeb API',
+    status: 'online',
+    version: '1.0.0',
+    description: 'Web-to-LLM Intelligence Engine API is up and running!',
+    endpoints: {
+      scrape: 'POST /api/scrape',
+      crawl: 'POST /api/scrape/crawl',
+      extract: 'POST /api/scrape/extract',
+      chat: 'POST /api/chat/:jobId',
+    },
+  });
+});
+
 const createServer = async () => {
   if (isReady) return server;
   
@@ -38,29 +54,22 @@ const createServer = async () => {
 };
 
 // Vercel Serverless Handler
-export default async (req: any, res: any) => {
+export default async function handler(req: any, res: any) {
   await createServer();
-  server(req, res);
-};
+  return new Promise((resolve, reject) => {
+    res.on('finish', resolve);
+    res.on('close', resolve);
+    res.on('error', reject);
+    server(req, res);
+  });
+}
 
 // Local development
-if (process.env.NODE_ENV !== 'production') {
+if (!process.env.VERCEL && process.env.NODE_ENV !== 'production') {
   (async () => {
-    const app = await NestFactory.create(AppModule);
-    app.enableCors({
-      origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : true,
-      credentials: true,
-      allowedHeaders: ['Content-Type', 'Authorization', 'x-firecrawl-key', 'x-gemini-key'],
+    await createServer();
+    server.listen(3001, () => {
+      console.log('🚀 Backend running on http://localhost:3001');
     });
-    app.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true,
-        transform: true,
-        forbidNonWhitelisted: true,
-      }),
-    );
-    app.setGlobalPrefix('api');
-    await app.listen(3001);
-    console.log('🚀 Backend running on http://localhost:3001');
   })();
 }
