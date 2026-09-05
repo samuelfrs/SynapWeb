@@ -18,7 +18,7 @@ const createServer = async () => {
   });
   
   app.enableCors({
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
+    origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : true,
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization', 'x-firecrawl-key', 'x-gemini-key'],
   });
@@ -48,7 +48,7 @@ if (process.env.NODE_ENV !== 'production') {
   (async () => {
     const app = await NestFactory.create(AppModule);
     app.enableCors({
-      origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
+      origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : true,
       credentials: true,
       allowedHeaders: ['Content-Type', 'Authorization', 'x-firecrawl-key', 'x-gemini-key'],
     });
