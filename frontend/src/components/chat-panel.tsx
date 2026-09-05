@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Send, Loader2, Bot, User } from 'lucide-react';
+import { Send, Loader2, Bot, User, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -14,6 +14,13 @@ interface ChatPanelProps {
   jobId: string;
   content?: string;
 }
+
+const quickPrompts = [
+  { icon: '⚡', label: 'Resumo em tópicos', text: 'Faça um resumo executivo deste documento em 5 tópicos claros e objetivos.' },
+  { icon: '🔍', label: 'Conclusões e dados', text: 'Quais são as principais conclusões, métricas e resultados apresentados?' },
+  { icon: '🇧🇷', label: 'Traduzir resumo', text: 'Traduza os pontos principais deste documento para o português de forma fluida.' },
+  { icon: '❓', label: 'FAQ do documento', text: 'Gere um FAQ com as 4 perguntas e respostas mais importantes que este documento responde.' },
+];
 
 export function ChatPanel({ jobId, content }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -33,10 +40,10 @@ export function ChatPanel({ jobId, content }: ChatPanelProps) {
     }
   }, [messages, loading]);
 
-  const handleSend = async () => {
-    if (!input.trim() || loading) return;
+  const handleSendText = async (textToSend: string) => {
+    if (!textToSend.trim() || loading) return;
 
-    const userMessage = input.trim();
+    const userMessage = textToSend.trim();
     setInput('');
     setLoading(true);
 
@@ -78,6 +85,10 @@ export function ChatPanel({ jobId, content }: ChatPanelProps) {
     }
   };
 
+  const handleSend = () => {
+    handleSendText(input);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -95,7 +106,7 @@ export function ChatPanel({ jobId, content }: ChatPanelProps) {
             Chat com o Documento
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Faça perguntas sobre o conteúdo extraído
+            Perguntas fundamentadas estritamente no conteúdo extraído
           </p>
         </div>
       </div>
@@ -103,9 +114,35 @@ export function ChatPanel({ jobId, content }: ChatPanelProps) {
       {/* Messages - guaranteed scroll area constrained by grid */}
       <div className="min-h-0 overflow-y-auto p-4 space-y-4" ref={scrollRef}>
         {messages.length === 0 ? (
-          <div className="text-center text-muted-foreground text-sm py-12">
-            <Bot className="h-10 w-10 mx-auto mb-3 opacity-40" />
-            <p>Faça uma pergunta sobre o documento para começar</p>
+          <div className="space-y-4 py-8">
+            <div className="text-center text-muted-foreground text-sm">
+              <Bot className="h-9 w-9 mx-auto mb-2 opacity-50 text-primary" />
+              <p className="font-medium text-foreground">Como posso ajudar com este documento?</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Escolha uma pergunta rápida abaixo ou digite o que desejar:
+              </p>
+            </div>
+
+            {/* Quick prompts grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
+              {quickPrompts.map((p, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  disabled={loading}
+                  onClick={() => handleSendText(p.text)}
+                  className="flex flex-col items-start gap-1 p-3 rounded-lg border border-border/70 bg-muted/30 hover:bg-muted hover:border-primary/40 text-left transition-all group"
+                >
+                  <span className="text-xs font-medium text-foreground flex items-center gap-1.5">
+                    <span>{p.icon}</span>
+                    <span>{p.label}</span>
+                  </span>
+                  <span className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">
+                    {p.text}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
         ) : (
           messages.map((msg) => (
@@ -153,9 +190,29 @@ export function ChatPanel({ jobId, content }: ChatPanelProps) {
         )}
       </div>
 
-      {/* Input - pinned at bottom of grid */}
-      <div className="border-t p-4 bg-background">
-        <div className="flex gap-2">
+      {/* Input area */}
+      <div className="border-t bg-background">
+        {/* Chips row */}
+        {messages.length > 0 && (
+          <div className="flex items-center gap-1.5 px-4 pt-2.5 pb-1 overflow-x-auto text-[11px] border-b border-border/30">
+            <span className="text-muted-foreground shrink-0 flex items-center gap-1">
+              <Sparkles className="h-3 w-3 text-primary" /> Sugestões:
+            </span>
+            {quickPrompts.map((p, idx) => (
+              <button
+                key={idx}
+                type="button"
+                disabled={loading}
+                onClick={() => handleSendText(p.text)}
+                className="rounded-md border border-border/60 bg-muted/40 hover:bg-muted px-2 py-0.5 text-muted-foreground hover:text-foreground transition-colors shrink-0 disabled:opacity-50"
+              >
+                {p.icon} {p.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className="p-4 flex gap-2">
           <Textarea
             placeholder="Pergunte sobre o documento..."
             value={input}

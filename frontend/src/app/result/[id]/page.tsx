@@ -2,7 +2,7 @@
 
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Copy, Download, Check, FileText, FileJson, Info, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Copy, Download, Check, FileText, FileJson, Info, MessageSquare, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -19,6 +19,7 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
   const [job, setJob] = useState<ScrapeJob | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [copiedLlm, setCopiedLlm] = useState(false);
 
   useEffect(() => {
     getJob(id)
@@ -31,6 +32,13 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
     await navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleCopyLlm = async (text: string, jobUrl: string) => {
+    const formatted = `Você é um assistente técnico especialista. Abaixo está o conteúdo extraído da página ${jobUrl}:\n\n=== CONTEÚDO EXTRAÍDO ===\n${text}\n=== FIM DO CONTEÚDO ===\n\nCom base estritamente nas informações acima, por favor responda:`;
+    await navigator.clipboard.writeText(formatted);
+    setCopiedLlm(true);
+    setTimeout(() => setCopiedLlm(false), 2000);
   };
 
   const handleDownload = (content: string, filename: string) => {
@@ -53,13 +61,13 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
 
   if (!job) return null;
 
-  const content = job.contentMd || JSON.stringify(job.contentJson, null, 2) || '';
+  const content = job.contentMd || (job.contentJson ? JSON.stringify(job.contentJson, null, 2) : '') || '';
   const hostname = (() => { try { return new URL(job.url).hostname; } catch { return job.url; } })();
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => router.push('/')}>
             <ArrowLeft className="h-4 w-4" />
@@ -68,7 +76,7 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
             <h1 className="text-xl font-semibold truncate max-w-md" title={job.url}>
               {hostname}
             </h1>
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
               <Badge variant={job.status === 'COMPLETED' ? 'default' : job.status === 'FAILED' ? 'destructive' : 'secondary'}>
                 {job.status}
               </Badge>
@@ -76,18 +84,32 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
               <span className="text-xs text-muted-foreground">
                 {new Date(job.createdAt).toLocaleString('pt-BR')}
               </span>
+              {content && (
+                <span className="text-xs text-emerald-400 font-medium">
+                  • ~{Math.ceil(content.length / 4).toLocaleString()} tokens (Cabe em GPT-4o, Claude, Gemini)
+                </span>
+              )}
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center flex-wrap gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={() => handleCopy(content)}
           >
-            {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+            {copied ? <Check className="mr-1.5 h-4 w-4 text-emerald-400" /> : <Copy className="mr-1.5 h-4 w-4" />}
             {copied ? 'Copiado!' : 'Copiar'}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleCopyLlm(content, job.url)}
+            title="Copiar com prompt pronto para colar no ChatGPT, Claude ou Cursor"
+          >
+            {copiedLlm ? <Check className="mr-1.5 h-4 w-4 text-emerald-400" /> : <Sparkles className="mr-1.5 h-4 w-4 text-primary" />}
+            {copiedLlm ? 'Copiado p/ LLM!' : 'Copiar p/ LLM'}
           </Button>
           <Button
             variant="outline"
@@ -99,7 +121,7 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
               )
             }
           >
-            <Download className="mr-2 h-4 w-4" />
+            <Download className="mr-1.5 h-4 w-4" />
             Download
           </Button>
           <Sheet>

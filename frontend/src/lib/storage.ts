@@ -121,3 +121,61 @@ export function clearStoredApiKeys(): void {
     console.error('Error clearing API keys:', e);
   }
 }
+
+// Backup & Restore Helpers
+export interface SynapWebBackup {
+  version: number;
+  exportedAt: string;
+  jobs: ScrapeJob[];
+  chats: Record<string, ChatMessage[]>;
+}
+
+export function exportBackup(): string {
+  if (typeof window === 'undefined') return '';
+  const jobs = getLocalJobs();
+  const chats: Record<string, ChatMessage[]> = {};
+  for (const j of jobs) {
+    const msgs = getLocalChatMessages(j.id);
+    if (msgs.length > 0) chats[j.id] = msgs;
+  }
+  const backup: SynapWebBackup = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    jobs,
+    chats,
+  };
+  return JSON.stringify(backup, null, 2);
+}
+
+export function importBackup(rawJson: string): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    const backup: SynapWebBackup = JSON.parse(rawJson);
+    if (!backup.jobs || !Array.isArray(backup.jobs)) return false;
+
+    // Merge existing and imported jobs
+    const currentJobs = getLocalJobs();
+    const jobMap = new Map<string, ScrapeJob>();
+    for (const j of currentJobs) jobMap.set(j.id, j);
+    for (const j of backup.jobs) jobMap.set(j.id, j);
+
+    const mergedJobs = Array.from(jobMap.values())
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 50);
+
+    localStorage.setItem(JOBS_KEY, JSON.stringify(mergedJobs));
+
+    // Restore chats
+    if (backup.chats && typeof backup.chats === 'object') {
+      for (const [jobId, msgs] of Object.entries(backup.chats)) {
+        if (Array.isArray(msgs)) {
+          localStorage.setItem(CHAT_PREFIX + jobId, JSON.stringify(msgs));
+        }
+      }
+    }
+    return true;
+  } catch (e) {
+    console.error('Failed to import backup:', e);
+    return false;
+  }
+}

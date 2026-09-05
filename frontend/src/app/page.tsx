@@ -165,6 +165,42 @@ export default function PlaygroundPage() {
                 {mode === 'EXTRACT' && 'Extrai dados em JSON com IA'}
               </span>
             </div>
+
+            {/* Quick try examples */}
+            <div className="flex items-center gap-2 pt-2 border-t border-border/40 text-xs flex-wrap">
+              <span className="text-muted-foreground shrink-0 font-medium">Testar com:</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setUrl('https://dl.acm.org/doi/10.1145/3372224.3380900');
+                  setMode('SCRAPE');
+                }}
+                className="rounded-md bg-muted px-2.5 py-1 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors text-[11px] cursor-pointer"
+              >
+                📄 Artigo ACM (PDF)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setUrl('https://stripe.com/docs/api');
+                  setMode('CRAWL');
+                }}
+                className="rounded-md bg-muted px-2.5 py-1 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors text-[11px] cursor-pointer"
+              >
+                📚 Stripe API Docs
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setUrl('https://example.com');
+                  setMode('EXTRACT');
+                  setExtractPrompt('Extraia o título da página e a descrição principal em JSON');
+                }}
+                className="rounded-md bg-muted px-2.5 py-1 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors text-[11px] cursor-pointer"
+              >
+                🏷️ Extrair JSON
+              </button>
+            </div>
           </CardContent>
         </Card>
 

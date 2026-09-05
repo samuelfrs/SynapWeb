@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Globe, FolderSearch, FileJson, RefreshCw, Trash2 } from 'lucide-react';
+import { ArrowRight, Globe, FolderSearch, FileJson, RefreshCw, Trash2, Download, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { getJobs, type ScrapeJob } from '@/lib/api';
-import { deleteLocalJob, clearLocalJobs } from '@/lib/storage';
+import { deleteLocalJob, clearLocalJobs, exportBackup, importBackup } from '@/lib/storage';
 
 const modeIcons = {
   SCRAPE: Globe,
@@ -25,6 +25,7 @@ const statusColors = {
 export default function HistoryPage() {
   const [jobs, setJobs] = useState<ScrapeJob[]>([]);
   const [loading, setLoading] = useState(true);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadJobs = () => {
     setLoading(true);
@@ -48,28 +49,87 @@ export default function HistoryPage() {
     }
   };
 
+  const handleExportBackup = () => {
+    const data = exportBackup();
+    if (!data) return;
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `synapweb-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      if (content && importBackup(content)) {
+        loadJobs();
+      } else {
+        alert('Arquivo de backup inválido.');
+      }
+    };
+    reader.readAsText(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   useEffect(() => {
     loadJobs();
   }, []);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Histórico de Extrações</h1>
           <p className="text-xs text-muted-foreground mt-0.5">
             Salvo localmente no seu navegador (privado e sem limites de servidor)
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center flex-wrap gap-2">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImportFile}
+            accept=".json"
+            className="hidden"
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportBackup}
+            disabled={jobs.length === 0}
+            title="Exportar backup do histórico em arquivo JSON"
+          >
+            <Download className="mr-1.5 h-3.5 w-3.5" />
+            Backup
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            title="Restaurar backup a partir de um arquivo JSON"
+          >
+            <Upload className="mr-1.5 h-3.5 w-3.5" />
+            Restaurar
+          </Button>
           {jobs.length > 0 && (
-            <Button variant="ghost" size="sm" onClick={handleClearAll} className="text-destructive hover:bg-destructive/10">
-              <Trash2 className="mr-1.5 h-4 w-4" />
-              Limpar tudo
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClearAll}
+              className="text-destructive hover:bg-destructive/10"
+            >
+              <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+              Limpar
             </Button>
           )}
           <Button variant="outline" size="sm" onClick={loadJobs} disabled={loading}>
-            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
             Atualizar
           </Button>
         </div>
