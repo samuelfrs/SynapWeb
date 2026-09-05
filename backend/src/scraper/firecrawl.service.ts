@@ -60,9 +60,18 @@ export class FirecrawlService {
       });
 
       if (!response.ok) {
-        const error = await response.text();
-        this.logger.error(`Firecrawl scrape error: ${error}`);
-        throw new InternalServerErrorException('Erro ao processar página no Firecrawl');
+        const errorText = await response.text();
+        this.logger.error(`Firecrawl scrape error: ${errorText}`);
+        let message = 'Erro ao processar página no Firecrawl';
+        try {
+          const parsed = JSON.parse(errorText);
+          if (parsed.code === 'SCRAPE_ALL_ENGINES_FAILED' || parsed.error?.includes('blocking automated access')) {
+            message = 'Este site bloqueia raspadores automatizados (Cloudflare/Anti-bot). Tente uma página pública ou documento sem bloqueio.';
+          } else if (parsed.error) {
+            message = parsed.error;
+          }
+        } catch {}
+        throw new InternalServerErrorException(message);
       }
 
       const data = await response.json();

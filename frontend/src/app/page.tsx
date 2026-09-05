@@ -172,12 +172,12 @@ export default function PlaygroundPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setUrl('https://dl.acm.org/doi/10.1145/3372224.3380900');
+                  setUrl('https://arxiv.org/abs/2312.11805');
                   setMode('SCRAPE');
                 }}
                 className="rounded-md bg-muted px-2.5 py-1 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors text-[11px] cursor-pointer"
               >
-                📄 Artigo ACM (PDF)
+                📄 Artigo ArXiv (Gemini)
               </button>
               <button
                 type="button"
