@@ -112,12 +112,13 @@ export class FirecrawlService {
       const data = await response.json();
       const jobId = data.id;
 
-      // Poll Firecrawl until crawl completes (up to 60 seconds)
-      const maxAttempts = 20;
+      // Poll Firecrawl until crawl completes (up to 55 seconds to stay safe within Vercel 60s window)
+      const maxAttempts = 22;
       let pages: Array<{ markdown: string; metadata: Record<string, any> }> = [];
+      let latestPartialPages: Array<{ markdown: string; metadata: Record<string, any> }> = [];
 
       for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        await new Promise((resolve) => setTimeout(resolve, 3000));
+        await new Promise((resolve) => setTimeout(resolve, 2500));
 
         const checkRes = await fetch(`${this.apiUrl}/crawl/${jobId}`, {
           headers: this.getHeaders(customApiKey),
@@ -125,6 +126,10 @@ export class FirecrawlService {
 
         if (checkRes.ok) {
           const checkData = await checkRes.json();
+          if (Array.isArray(checkData.data) && checkData.data.length > 0) {
+            latestPartialPages = checkData.data;
+          }
+
           if (checkData.status === 'completed') {
             pages = checkData.data || [];
             break;
@@ -134,6 +139,12 @@ export class FirecrawlService {
             break;
           }
         }
+      }
+
+      // If loop exited due to time but partial pages were scraped, return what was achieved
+      if (pages.length === 0 && latestPartialPages.length > 0) {
+        this.logger.log(`Crawl reached time window, returning ${latestPartialPages.length} partial pages scraped so far.`);
+        pages = latestPartialPages;
       }
 
       // If crawl returned 0 pages (e.g. single URL or blocked recursion), fallback to direct scrape of the URL

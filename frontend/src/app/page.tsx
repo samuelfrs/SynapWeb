@@ -61,6 +61,7 @@ export default function PlaygroundPage() {
   const [reconstructing, setReconstructing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [extractPrompt, setExtractPrompt] = useState('');
+  const [crawlLimit, setCrawlLimit] = useState<number>(10);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,7 +77,7 @@ export default function PlaygroundPage() {
           job = await scrapeUrl(url);
           break;
         case 'CRAWL':
-          job = await crawlDomain(url);
+          job = await crawlDomain(url, crawlLimit);
           break;
         case 'EXTRACT':
           job = await extractJson(url, extractPrompt || undefined);
@@ -253,13 +254,46 @@ export default function PlaygroundPage() {
                   />
                 )}
 
+                {mode === 'CRAWL' && (
+                  <div className="rounded-xl border border-border/70 bg-muted/30 p-3.5 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-foreground">
+                        Profundidade da Varredura (Limite de Páginas):
+                      </span>
+                      <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
+                        {crawlLimit} páginas
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-4 gap-2">
+                      {[10, 25, 50, 100].map((limit) => (
+                        <button
+                          key={limit}
+                          type="button"
+                          disabled={loading || reconstructing}
+                          onClick={() => setCrawlLimit(limit)}
+                          className={`py-1.5 px-2 rounded-lg text-xs font-medium transition-all ${
+                            crawlLimit === limit
+                              ? 'bg-primary text-primary-foreground shadow-xs scale-[1.02]'
+                              : 'bg-background border border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted'
+                          }`}
+                        >
+                          {limit} págs
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      💡 <em>Cada página consome 1 crédito do Firecrawl. Varreduras de 50 a 100 páginas podem levar entre 30 e 50 segundos.</em>
+                    </p>
+                  </div>
+                )}
+
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary">
                     {mode === 'RECONSTRUCT' ? 'RECONSTRUÇÃO' : mode}
                   </Badge>
                   <span className="text-xs text-muted-foreground">
                     {mode === 'SCRAPE' && 'Suporta sites, SPAs e links de PDF'}
-                    {mode === 'CRAWL' && 'Varre subpáginas recursivamente (limite: 10 páginas)'}
+                    {mode === 'CRAWL' && `Varre subpáginas recursivamente (limite selecionado: ${crawlLimit} páginas)`}
                     {mode === 'EXTRACT' && 'Extrai dados em JSON com IA'}
                     {mode === 'RECONSTRUCT' && 'Recupera preprints no Unpaywall ou sintetiza consenso acadêmico por IA'}
                   </span>
