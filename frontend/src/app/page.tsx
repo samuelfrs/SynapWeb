@@ -22,7 +22,7 @@ import { HowToUseDialog } from '@/components/how-to-use-dialog';
 import { FileDropzone } from '@/components/file-dropzone';
 import { scrapeUrl, crawlDomain, extractJson, reconstructPaper } from '@/lib/api';
 
-type Mode = 'SCRAPE' | 'CRAWL' | 'EXTRACT';
+type Mode = 'SCRAPE' | 'CRAWL' | 'EXTRACT' | 'RECONSTRUCT';
 type InputSource = 'URL' | 'FILE';
 
 const modes = [
@@ -43,6 +43,12 @@ const modes = [
     label: 'Extrair JSON',
     description: 'Extraia dados estruturados com schema personalizado',
     icon: FileJson,
+  },
+  {
+    id: 'RECONSTRUCT' as Mode,
+    label: 'Reconstruir Paper',
+    description: 'Unpaywall & Síntese por Citações',
+    icon: Sparkles,
   },
 ];
 
@@ -74,6 +80,9 @@ export default function PlaygroundPage() {
           break;
         case 'EXTRACT':
           job = await extractJson(url, extractPrompt || undefined);
+          break;
+        case 'RECONSTRUCT':
+          job = await reconstructPaper(url);
           break;
       }
       router.push(`/result/${job.id}`);
@@ -175,7 +184,7 @@ export default function PlaygroundPage() {
       ) : (
         <div className="space-y-6">
           {/* Mode Selector */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {modes.map((m) => {
               const Icon = m.icon;
               return (
@@ -202,8 +211,12 @@ export default function PlaygroundPage() {
               <CardContent className="pt-6 space-y-4">
                 <div className="flex gap-2">
                   <Input
-                    type="url"
-                    placeholder="https://docs.example.com ou link para PDF..."
+                    type={mode === 'RECONSTRUCT' ? 'text' : 'url'}
+                    placeholder={
+                      mode === 'RECONSTRUCT'
+                        ? 'Cole a URL do paper (ACM, Nature, IEEE) ou DOI (ex: 10.1145/3065386)...'
+                        : 'https://docs.example.com ou link para PDF...'
+                    }
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
                     className="flex-1 h-12 text-base"
@@ -224,7 +237,7 @@ export default function PlaygroundPage() {
                     ) : (
                       <>
                         <Zap className="mr-2 h-4 w-4" />
-                        Extrair
+                        {mode === 'RECONSTRUCT' ? 'Reconstruir' : 'Extrair'}
                       </>
                     )}
                   </Button>
@@ -241,17 +254,31 @@ export default function PlaygroundPage() {
                 )}
 
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary">{mode}</Badge>
+                  <Badge variant="secondary">
+                    {mode === 'RECONSTRUCT' ? 'RECONSTRUÇÃO' : mode}
+                  </Badge>
                   <span className="text-xs text-muted-foreground">
                     {mode === 'SCRAPE' && 'Suporta sites, SPAs e links de PDF'}
                     {mode === 'CRAWL' && 'Varre subpáginas recursivamente (limite: 10 páginas)'}
                     {mode === 'EXTRACT' && 'Extrai dados em JSON com IA'}
+                    {mode === 'RECONSTRUCT' && 'Recupera preprints no Unpaywall ou sintetiza consenso acadêmico por IA'}
                   </span>
                 </div>
 
                 {/* Quick try examples */}
                 <div className="flex items-center gap-2 pt-2 border-t border-border/40 text-xs flex-wrap">
                   <span className="text-muted-foreground shrink-0 font-medium">Testar com:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUrl('https://dl.acm.org/doi/10.1145/3065386');
+                      setMode('RECONSTRUCT');
+                    }}
+                    className="rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 px-2.5 py-1 hover:bg-amber-500/20 transition-colors text-[11px] cursor-pointer font-medium flex items-center gap-1"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    🔬 Reconstruir Paper (ACM / AlexNet)
+                  </button>
                   <button
                     type="button"
                     onClick={() => {
