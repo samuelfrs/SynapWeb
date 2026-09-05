@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Globe, FolderSearch, FileJson, RefreshCw, Trash2, Download, Upload } from 'lucide-react';
+import { ArrowRight, Globe, FolderSearch, FileJson, RefreshCw, Trash2, Download, Upload, FileUp, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +13,8 @@ const modeIcons = {
   SCRAPE: Globe,
   CRAWL: FolderSearch,
   EXTRACT: FileJson,
+  UPLOAD: FileUp,
+  RECONSTRUCT: Sparkles,
 };
 
 const statusColors = {

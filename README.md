@@ -15,6 +15,8 @@
 ## ✨ Funcionalidades Principais
 
 - 🌐 **Scrape URL:** Extrai o conteúdo de uma página única ou link direto para PDF em Markdown limpo para LLMs, removendo menus, banners, anúncios e scripts.
+- 📎 **Anexar Arquivos & Print Direto (Ctrl+V):** Arraste e solte arquivos locais (PDF, Imagens PNG/JPG/WebP, TXT, CSV, Markdown, JSON) ou aperte `Ctrl+V` em qualquer lugar da tela para colar um print de tela, processado via Gemini Multimodal.
+- 🔬 **Engenharia Reversa Acadêmica & Resgate Anti-Bot:** Quando links científicos são protegidos por paywall ou bloqueados por proteção anti-bot (como Cloudflare), o SynapWeb identifica o DOI, busca preprints gratuitos e abertos autorizados via Unpaywall API e gera uma reconstrução sintética de literatura com base no consenso científico e citações acadêmicas.
 - 📁 **Crawl Docs:** Varre documentações inteiras recursivamente em lote (até 10 subpáginas) e consolida em um documento único pronto para RAG.
 - 🏷️ **Extrair JSON (com IA):** Extração de dados estruturados a partir de prompts em linguagem natural (ex: *"Extraia título, resumo, tópicos e preços"*) com fallback inteligente via Google Gemini.
 - 💬 **Chat RAG com o Documento:** Converse diretamente com o conteúdo extraído usando Google Gemini, com respostas fundamentadas estritamente no texto e memória contextual.

@@ -43,3 +43,32 @@ export class ExtractJsonDto {
   @IsObject()
   schema?: Record<string, any>;
 }
+
+export class UploadFileDto {
+  @IsString()
+  filename: string;
+
+  @IsString()
+  mimeType: string;
+
+  @IsOptional()
+  @IsString()
+  base64?: string;
+
+  @IsOptional()
+  @IsString()
+  textContent?: string;
+
+  @IsOptional()
+  @IsString()
+  prompt?: string;
+}
+
+export class ReconstructPaperDto {
+  @IsString()
+  url: string;
+
+  @IsOptional()
+  @IsString()
+  doi?: string;
+}

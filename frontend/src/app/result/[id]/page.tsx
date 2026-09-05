@@ -80,7 +80,15 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
               <Badge variant={job.status === 'COMPLETED' ? 'default' : job.status === 'FAILED' ? 'destructive' : 'secondary'}>
                 {job.status}
               </Badge>
-              <Badge variant="outline">{job.mode}</Badge>
+              <Badge variant="outline">
+                {job.metadata?.isReconstructed
+                  ? '🔍 Reconstrução Científica'
+                  : job.metadata?.isLegalOpenAccess
+                  ? '🔓 Open Access'
+                  : job.mode === 'UPLOAD'
+                  ? '📎 Arquivo / Print'
+                  : job.mode}
+              </Badge>
               <span className="text-xs text-muted-foreground">
                 {new Date(job.createdAt).toLocaleString('pt-BR')}
               </span>
@@ -139,6 +147,43 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
           </Sheet>
         </div>
       </div>
+
+      {/* Special Information Banners */}
+      {job.metadata?.isReconstructed && (
+        <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 p-4 text-xs text-purple-300 flex items-start gap-3">
+          <Sparkles className="h-5 w-5 text-purple-400 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <p className="font-semibold text-purple-200 text-sm">
+              Síntese Científica Reconstruída por Literatura & Citações
+            </p>
+            <p className="text-muted-foreground leading-relaxed">
+              O conteúdo abaixo foi sintetizado com base no consenso de artigos que citam esta pesquisa, preprints abertos e metadados bibliográficos indexados (conforme os princípios de Uso Justo acadêmico), superando paywalls comerciais de forma 100% legal.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {job.metadata?.isLegalOpenAccess && (
+        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-xs text-emerald-300 flex items-start gap-3">
+          <Check className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <p className="font-semibold text-emerald-200 text-sm">
+              Preprint Aberto Autorizado (Resgatado via Unpaywall)
+            </p>
+            <p className="text-muted-foreground leading-relaxed">
+              Uma versão aberta autorizada pelos autores foi encontrada e extraída com sucesso de:{' '}
+              <a
+                href={job.metadata.unpaywallUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="underline font-mono text-emerald-400 hover:text-emerald-300 break-all"
+              >
+                {job.metadata.unpaywallUrl}
+              </a>
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Error display */}
       {job.error && (

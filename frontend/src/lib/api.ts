@@ -40,7 +40,7 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> 
 export interface ScrapeJob {
   id: string;
   url: string;
-  mode: 'SCRAPE' | 'CRAWL' | 'EXTRACT';
+  mode: 'SCRAPE' | 'CRAWL' | 'EXTRACT' | 'UPLOAD' | 'RECONSTRUCT';
   status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
   format: 'MARKDOWN' | 'JSON';
   contentMd?: string | null;
@@ -57,6 +57,14 @@ export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   createdAt: string;
+}
+
+export interface UploadFilePayload {
+  filename: string;
+  mimeType: string;
+  base64?: string;
+  textContent?: string;
+  prompt?: string;
 }
 
 // Scraper API (Stateless Execution + Local Persistence)
@@ -82,6 +90,24 @@ export async function extractJson(url: string, prompt?: string, schema?: Record<
   const job = await fetchAPI<ScrapeJob>('/scrape/extract', {
     method: 'POST',
     body: JSON.stringify({ url, prompt, schema }),
+  });
+  saveLocalJob(job);
+  return job;
+}
+
+export async function uploadFile(payload: UploadFilePayload): Promise<ScrapeJob> {
+  const job = await fetchAPI<ScrapeJob>('/scrape/upload', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  saveLocalJob(job);
+  return job;
+}
+
+export async function reconstructPaper(url: string, doi?: string): Promise<ScrapeJob> {
+  const job = await fetchAPI<ScrapeJob>('/scrape/reconstruct', {
+    method: 'POST',
+    body: JSON.stringify({ url, doi }),
   });
   saveLocalJob(job);
   return job;

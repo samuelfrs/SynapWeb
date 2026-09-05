@@ -132,4 +132,145 @@ ${content.substring(0, 35000)}
 
     return null;
   }
+
+  async processMultimodalFile(
+    base64: string,
+    mimeType: string,
+    prompt?: string,
+    customApiKey?: string,
+  ): Promise<string> {
+    const key = customApiKey || this.apiKey;
+    if (!key) {
+      throw new Error(
+        'Nenhuma chave da API Gemini configurada. Configure sua chave em "Chaves de API" no topo da página.',
+      );
+    }
+
+    const systemInstruction = `Você é o motor de extração multimodal do SynapWeb.
+Transcreva e estruture todo o conteúdo textual, tabelas, dados, diagramas e fórmulas presentes neste arquivo anexado em formato Markdown cirúrgico e limpo, perfeitamente otimizado para pipelines de LLMs e RAG.
+${prompt ? `Instruções do usuário: ${prompt}\n` : ''}
+Diretrizes:
+- Transcreva tabelas usando sintaxe Markdown padrão (| col1 | col2 |).
+- Mantenha títulos, subtítulos, cabeçalhos e listas numeradas ou bullet points.
+- Se houver gráficos ou infográficos, descreva detalhadamente os eixos, valores e conclusões.
+- Inicie a resposta diretamente pelo título ou conteúdo principal, sem saudações ou meta-comentários.`;
+
+    const contents = [
+      {
+        role: 'user',
+        parts: [
+          {
+            inlineData: {
+              mimeType,
+              data: base64,
+            },
+          },
+          {
+            text: systemInstruction,
+          },
+        ],
+      },
+    ];
+
+    for (const model of this.candidateModels) {
+      try {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents }),
+          },
+        );
+
+        if (!res.ok) {
+          const errText = await res.text();
+          this.logger.warn(`Gemini multimodal attempt on ${model} failed (${res.status}): ${errText}`);
+          continue;
+        }
+
+        const data = await res.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) return text;
+      } catch (err: any) {
+        this.logger.warn(`Gemini multimodal error on ${model}: ${err.message}`);
+      }
+    }
+
+    throw new Error('Não foi possível processar o arquivo anexado via Gemini.');
+  }
+
+  async synthesizeLiterature(
+    doi: string,
+    title?: string,
+    rawUrl?: string,
+    customApiKey?: string,
+  ): Promise<string> {
+    const key = customApiKey || this.apiKey;
+    if (!key) {
+      throw new Error(
+        'Nenhuma chave da API Gemini configurada. Configure sua chave em "Chaves de API" no topo da página.',
+      );
+    }
+
+    const systemPrompt = `Você é um pesquisador sênior e especialista em síntese de literatura acadêmica.
+Um artigo científico com paywall ou acesso restrito foi solicitado pelo usuário.
+Sua missão é realizar uma RECONSTRUÇÃO CIENTÍFICA ESTRUTURADA E FUNDAMENTADA deste artigo com base no conhecimento consolidado da literatura, citações em outros papers acadêmicos e consenso da comunidade científica.
+
+Identificadores fornecidos:
+- DOI: ${doi || 'Não informado'}
+- Título/Tema: ${title || 'Não informado'}
+- URL original: ${rawUrl || 'Não informado'}
+
+Estruture sua resposta estritamente no seguinte formato Markdown:
+
+# 🔍 Dossiê de Reconstrução Científica por Literatura
+
+> **Aviso de Transparência:** Este documento foi reconstruído sinteticamente a partir de literatura acadêmica indexada, trabalhos que citam a pesquisa e consenso científico registrado, em conformidade com o princípio de Uso Justo (*Fair Use*) e análise bibliográfica.
+
+## 📌 1. Identificação da Pesquisa
+- **DOI:** ${doi || 'N/A'}
+- **Título Identificado:** (coloque o título completo oficial se conhecido)
+- **Área / Domínio:** (ex: Inteligência Artificial, Engenharia de Software, etc.)
+
+## 🎯 2. Proposta Central & Problema Abordado
+(Descreva o problema que os autores buscaram resolver e a tese/hipótese principal apresentada).
+
+## 🔬 3. Metodologia & Arquitetura (Descrita na Literatura)
+(Explique as abordagens técnicas, modelos, pipelines, conjuntos de dados ou experimentos conhecidos e citados por terceiros sobre este artigo).
+
+## 📊 4. Principais Descobertas & Métricas Conhecidas
+(Sintetize os resultados relatados, ganhos de desempenho ou conclusões teóricas/práticas).
+
+## ⚖️ 5. Consenso Científico & Repercussão
+(Como a comunidade de pesquisadores recebeu este trabalho? Quais foram os trabalhos subsequentes mais notáveis que expandiram ou criticaram esta pesquisa?).
+
+## 📚 6. Leituras Recomendadas & Fontes Abertas Relacionadas
+(Cite artigos correlatos abertos ou preprints similares no arXiv que aprofundam o mesmo tema).`;
+
+    const contents = [{ role: 'user', parts: [{ text: systemPrompt }] }];
+
+    for (const model of this.candidateModels) {
+      try {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents }),
+          },
+        );
+
+        if (!res.ok) continue;
+
+        const data = await res.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) return text;
+      } catch (err: any) {
+        this.logger.warn(`Gemini literature synthesis error on ${model}: ${err.message}`);
+      }
+    }
+
+    throw new Error('Falha ao gerar síntese bibliográfica com Gemini.');
+  }
 }

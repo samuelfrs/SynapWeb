@@ -48,6 +48,29 @@ export class ScraperController {
     );
   }
 
+  @Post('upload')
+  @HttpCode(HttpStatus.OK)
+  async uploadFile(
+    @Body() dto: any,
+    @Headers('x-gemini-key') customGeminiKey?: string,
+  ) {
+    return this.scraperService.processUpload(dto, customGeminiKey);
+  }
+
+  @Post('reconstruct')
+  @HttpCode(HttpStatus.OK)
+  async reconstructPaper(
+    @Body() dto: any,
+    @Headers('x-firecrawl-key') customFirecrawlKey?: string,
+    @Headers('x-gemini-key') customGeminiKey?: string,
+  ) {
+    return this.scraperService.reconstructAcademic(
+      dto,
+      customFirecrawlKey,
+      customGeminiKey,
+    );
+  }
+
   @Get('jobs')
   async getJobs() {
     return this.scraperService.getJobs();
