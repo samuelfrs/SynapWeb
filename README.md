@@ -1,60 +1,133 @@
 # SynapWeb — Web-to-LLM Intelligence Engine
 
-Motor inteligente de Web Scraping & Crawling que converte qualquer site, documentação ou PDF da web em **Markdown limpo** ou **JSON estruturado** pronto para LLMs, com chat RAG integrado via Google Gemini.
+> Motor inteligente de Web Scraping & Crawling que converte qualquer site, documentação técnica ou PDF da web em **Markdown limpo** ou **JSON estruturado** pronto para alimentar LLMs e pipelines de RAG, com chat integrado via Google Gemini e arquitetura **Local-First (Zero Database)**.
 
-## ✨ Features
+---
 
-- **Scrape URL** — Extrai conteúdo de qualquer URL em Markdown limpo
-- **Crawl Docs** — Varre documentações inteiras recursivamente
-- **Extract JSON** — Extração estruturada com schema definido pelo usuário
-- **Chat RAG** — Converse com o conteúdo extraído via Gemini
-- **Histórico** — Todas as extrações salvas e acessíveis
-- **Export** — Download em `.md`, `.json` ou cópia rápida
+## ✨ Funcionalidades Principais
 
-## 🏗 Stack
+- 🌐 **Scrape URL:** Extrai o conteúdo de uma página única ou link direto para PDF em Markdown limpo para LLMs, removendo menus, banners, anúncios e scripts.
+- 📁 **Crawl Docs:** Varre documentações inteiras recursivamente em lote (até 10 subpáginas) e consolida em um documento único pronto para RAG.
+- 🏷️ **Extrair JSON (com IA):** Extração de dados estruturados a partir de prompts em linguagem natural (ex: *"Extraia título, resumo, tópicos e preços"*) com fallback inteligente via Google Gemini.
+- 💬 **Chat RAG com o Documento:** Converse diretamente com o conteúdo extraído usando Google Gemini, com respostas fundamentadas estritamente no texto e memória contextual.
+- ⚡ **Ações Rápidas no Chat:** Sugestões de 1 clique para gerar resumo executivo, extrair conclusões/dados, traduzir ou montar um FAQ completo.
+- ✨ **Copiar Pronto para LLM:** Botão que formata o documento dentro de um prompt de sistema otimizado, pronto para colar no **ChatGPT, Claude ou Cursor**.
+- 🔑 **BYOK (Bring Your Own Key):** Modal no cabeçalho que permite a qualquer visitante conectar suas próprias chaves gratuitas do Firecrawl e Gemini, viabilizando deploy público sem custos para o proprietário.
+- 💡 **Guia Interativo ("Como Usar"):** Tutorial passo a passo integrado na página inicial e no cabeçalho para guiar novos usuários.
+- 💾 **Arquitetura Local-First:** Histórico e chats salvos no `localStorage` do navegador com total privacidade, além de botões de **Exportar/Importar Backup em JSON**.
+- 📊 **Contador de Tokens:** Estimativa em tempo real com indicador de compatibilidade para janelas de contexto de LLMs.
+
+---
+
+## 🏗 Stack Tecnológica
 
 | Camada | Tecnologia |
-|--------|-----------|
-| Frontend | Next.js 15, React 19, TypeScript, Tailwind CSS, Shadcn UI |
-| Backend | NestJS, TypeScript, Prisma ORM |
-| Database | PostgreSQL (Supabase) |
-| Scraping | Firecrawl API |
-| IA/RAG | Google Gemini (`@google/genai`) |
-| Deploy | Vercel (Serverless) |
+|---|---|
+| **Frontend** | Next.js 15 (App Router), React 19, Tailwind CSS, Shadcn UI / Base UI, Lucide Icons |
+| **Backend** | NestJS, TypeScript, Architecture Stateless / Serverless |
+| **Scraping** | Firecrawl v2 API (Scrape, Crawl e Extração JSON) |
+| **Inteligência Artificial** | Google Gemini API (`gemini-3.1-flash-lite-preview` com fallback dinâmico) |
+| **Armazenamento** | LocalStorage no navegador (Local-First com retenção LRU) |
+| **Deploy** | Vercel (Monorepo Serverless) |
 
-## 📁 Estrutura
+---
 
-```
+## 📁 Estrutura do Projeto
+
+```text
 SynapWeb/
-├── frontend/    # Next.js 15 (App Router)
-├── backend/     # NestJS (API Serverless)
-└── README.md
+├── package.json              # Scripts centrais (dev:backend, dev:frontend)
+├── README.md                 # Documentação principal
+├── .gitignore                # Regras de versionamento
+│
+├── backend/                  # API NestJS Serverless
+│   ├── src/
+│   │   ├── main.ts           # Entrypoint dual (local 3001 e Vercel Serverless)
+│   │   ├── scraper/          # Endpoints de Scrape, Crawl e Extração JSON (v2)
+│   │   └── ai/               # Chat RAG e extração JSON com Gemini
+│   ├── vercel.json           # Configuração de deploy serverless
+│   ├── tsconfig.json         # TypeScript ~6.0.0
+│   └── .env.example          # Exemplo de variáveis locais
+│
+└── frontend/                 # Next.js 15 (App Router, Tailwind, Shadcn)
+    ├── src/
+    │   ├── app/              # Rotas: /, /history, /result/[id]
+    │   ├── components/       # Header, ChatPanel, ApiKeysDialog, HowToUseDialog, viewers
+    │   └── lib/              # API Client (BYOK headers), Storage (LocalStorage + Backup)
+    └── .env.example          # Exemplo de variáveis frontend
 ```
 
-## 🚀 Setup Local
+---
+
+## 🚀 Como Executar Localmente
 
 ### Pré-requisitos
-- Node.js 20+
-- Chaves de API: Firecrawl, Google Gemini, Supabase
+- **Node.js 20+**
+- **npm**
 
-### Backend
+### 1. Clonar o Repositório
 ```bash
+git clone https://github.com/samuelfrs/SynapWeb.git
+cd SynapWeb
+```
+
+### 2. Instalar Dependências
+```bash
+# Backend
 cd backend
 npm install
-cp .env.example .env  # Preencha as variáveis
-npx prisma generate
-npx prisma migrate dev
-npm run start:dev
-```
+cd ..
 
-### Frontend
-```bash
+# Frontend
 cd frontend
 npm install
-cp .env.example .env.local  # Preencha as variáveis
-npm run dev
+cd ..
 ```
+
+### 3. Configurar Variáveis de Ambiente
+
+Crie o arquivo `backend/.env`:
+```env
+FIRECRAWL_API_KEY="fc-sua-chave-aqui"
+GEMINI_API_KEY="sua-chave-gemini-aqui"
+ALLOWED_ORIGINS="http://localhost:3000"
+```
+
+Crie o arquivo `frontend/.env.local`:
+```env
+NEXT_PUBLIC_API_URL="http://localhost:3001"
+```
+
+*(Nota: O banco de dados PostgreSQL é 100% opcional, pois o sistema opera nativamente em modo Local-First/Stateless).*
+
+### 4. Iniciar os Servidores
+
+Abra dois terminais na raiz do projeto:
+
+* **Terminal 1 (Backend):**
+  ```bash
+  npm run dev:backend
+  # Rodando em http://localhost:3001
+  ```
+
+* **Terminal 2 (Frontend):**
+  ```bash
+  npm run dev:frontend
+  # Rodando em http://localhost:3000
+  ```
+
+Abra seu navegador em [http://localhost:3000](http://localhost:3000).
+
+---
+
+## 🔑 Obtenção de Chaves Gratuitas (BYOK)
+
+Qualquer usuário pode utilizar a ferramenta gratuitamente com suas próprias cotas:
+* **Firecrawl API:** Crie uma conta gratuita em [firecrawl.dev](https://www.firecrawl.dev) para créditos de scraping e crawling.
+* **Google Gemini API:** Obtenha uma chave 100% gratuita no [Google AI Studio](https://aistudio.google.com/app/apikey).
+
+---
 
 ## 📄 Licença
 
-MIT
+Distribuído sob a licença MIT. Consulte `LICENSE` para mais detalhes.
