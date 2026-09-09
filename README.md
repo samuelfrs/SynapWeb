@@ -1,11 +1,13 @@
 # SynapWeb — Web-to-LLM Intelligence Engine
 
-> Motor inteligente de Web Scraping & Crawling que converte qualquer site, documentação técnica ou PDF da web em **Markdown limpo** ou **JSON estruturado** pronto para alimentar LLMs e pipelines de RAG, com chat integrado via Google Gemini e arquitetura **Local-First (Zero Database)**.
+> Motor inteligente de Web Scraping & Crawling que converte qualquer site, documentação técnica, PDF ou captura de tela em **Markdown limpo** ou **JSON estruturado** pronto para alimentar LLMs e pipelines de RAG, com chat integrado via Google Gemini e arquitetura **Local-First (Zero Database)**.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new)
 [![GitHub License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Next.js 15](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org)
+[![Next.js 16](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org)
+[![React 19](https://img.shields.io/badge/React-19-blue?logo=react)](https://react.dev)
 [![NestJS 11](https://img.shields.io/badge/NestJS-11-red?logo=nestjs)](https://nestjs.com)
+[![Tailwind CSS 4](https://img.shields.io/badge/Tailwind-4-38bdf8?logo=tailwindcss)](https://tailwindcss.com)
 
 🔗 **Acesse a Aplicação em Produção:** [https://synapwebv1.vercel.app](https://synapwebv1.vercel.app)  
 📡 **API Endpoint:** [https://synap-web-api.vercel.app](https://synap-web-api.vercel.app)
@@ -15,17 +17,19 @@
 ## ✨ Funcionalidades Principais
 
 - 🌐 **Scrape URL:** Extrai o conteúdo de uma página única ou link direto para PDF em Markdown limpo para LLMs, removendo menus, banners, anúncios e scripts.
-- 📎 **Anexar Arquivos & Print Direto (Ctrl+V):** Arraste e solte arquivos locais (PDF, Imagens PNG/JPG/WebP, TXT, CSV, Markdown, JSON) ou aperte `Ctrl+V` em qualquer lugar da tela para colar um print de tela, processado via Gemini Multimodal.
+- 📎 **Anexar Arquivos & Print Direto (Ctrl+V):** Arraste e solte arquivos locais (PDFs, imagens PNG/JPG/WebP, TXT, CSV, Markdown, JSON, código TS/JS/PY/HTML) ou aperte `Ctrl+V` em qualquer lugar da tela para colar um print de tela, processado via Gemini Multimodal com suporte a payloads de até 50MB.
 - 🔬 **Engenharia Reversa Acadêmica & Resgate Anti-Bot:** Quando links científicos são protegidos por paywall ou bloqueados por proteção anti-bot (como Cloudflare), o SynapWeb identifica o DOI, busca preprints gratuitos e abertos autorizados via Unpaywall API e gera uma reconstrução sintética de literatura com base no consenso científico e citações acadêmicas.
 - 📁 **Crawl Docs:** Varre documentações inteiras recursivamente em lote (até 10 subpáginas) e consolida em um documento único pronto para RAG.
 - 🏷️ **Extrair JSON (com IA):** Extração de dados estruturados a partir de prompts em linguagem natural (ex: *"Extraia título, resumo, tópicos e preços"*) com fallback inteligente via Google Gemini.
-- 💬 **Chat RAG com o Documento:** Converse diretamente com o conteúdo extraído usando Google Gemini, com respostas fundamentadas estritamente no texto e memória contextual.
+- 💬 **Chat RAG com o Documento:** Converse diretamente com o conteúdo extraído usando Google Gemini, com respostas fundamentadas estritamente no texto, envio seguro e otimizado de contexto textual e memória contextual.
 - ⚡ **Ações Rápidas no Chat:** Sugestões de 1 clique para gerar resumo executivo, extrair conclusões/dados, traduzir ou montar um FAQ completo.
-- ✨ **Copiar Pronto para LLM:** Botão que formata o documento dentro de um prompt de sistema otimizado, pronto para colar no **ChatGPT, Claude ou Cursor**.
+- ✨ **Copiar Pronto para LLM (Dual: Resumido vs Completo):**
+  - **⚡ Copiar p/ LLM (Resumido):** Limpa formatações ruidosas, remove links redundantes e sintetiza os dados em um teto seguro de **~2.100 tokens (~8.500 caracteres)**, cabendo com folga em chats do **ChatGPT gratuito, Claude, DeepSeek ou Cursor**.
+  - **📜 Copiar p/ LLM (Completo):** Mantém o documento integral com prompt de sistema otimizado para modelos com janelas amplas (GPT-4o, Claude Pro, Gemini).
 - 🔑 **BYOK (Bring Your Own Key):** Modal no cabeçalho que permite a qualquer visitante conectar suas próprias chaves gratuitas do Firecrawl e Gemini, viabilizando deploy público sem custos para o proprietário.
 - 💡 **Guia Interativo ("Como Usar"):** Tutorial passo a passo integrado na página inicial e no cabeçalho para guiar novos usuários.
 - 💾 **Arquitetura Local-First:** Histórico e chats salvos no `localStorage` do navegador com total privacidade, além de botões de **Exportar/Importar Backup em JSON**.
-- 📊 **Contador de Tokens:** Estimativa em tempo real com indicador de compatibilidade para janelas de contexto de LLMs.
+- 📊 **Contador de Tokens & Métricas:** Estimativa em tempo real da contagem de tokens totais e da versão resumida.
 
 ---
 
@@ -33,10 +37,10 @@
 
 | Camada | Tecnologia |
 |---|---|
-| **Frontend** | Next.js 15 (App Router), React 19, Tailwind CSS, Shadcn UI / Base UI, Lucide Icons |
-| **Backend** | NestJS, TypeScript, Architecture Stateless / Serverless |
+| **Frontend** | Next.js 16 (App Router + Turbopack), React 19, Tailwind CSS 4, Base UI / Shadcn UI, Lucide Icons |
+| **Backend** | NestJS 11, Express (body parser configurado para até 50MB), TypeScript, Arquitetura Stateless / Serverless |
 | **Scraping** | Firecrawl v2 API (Scrape, Crawl e Extração JSON) |
-| **Inteligência Artificial** | Google Gemini API (`gemini-3.1-flash-lite-preview` com fallback dinâmico) |
+| **Inteligência Artificial** | Google Gemini API (`gemini-3.6-flash`, `gemini-3.1-flash-lite-preview`, `gemini-3.5-flash` em cadeia de fallback) |
 | **Armazenamento** | LocalStorage no navegador (Local-First com retenção LRU) |
 | **Deploy** | Vercel (Monorepo Serverless) |
 
@@ -46,26 +50,39 @@
 
 ```text
 SynapWeb/
-├── package.json              # Scripts centrais (dev:backend, dev:frontend)
+├── package.json              # Scripts centrais (dev:backend, dev:frontend, build:*)
 ├── README.md                 # Documentação principal
 ├── .gitignore                # Regras de versionamento
 │
 ├── backend/                  # API NestJS Serverless
 │   ├── src/
-│   │   ├── main.ts           # Entrypoint dual (local 3001 e Vercel Serverless)
-│   │   ├── scraper/          # Endpoints de Scrape, Crawl e Extração JSON (v2)
-│   │   └── ai/               # Chat RAG e extração JSON com Gemini
+│   │   ├── main.ts           # Entrypoint dual (local 3001 e Vercel Serverless com body parser de 50MB)
+│   │   ├── scraper/          # Endpoints de Scrape, Crawl, Extração JSON, Upload e Reconstrução Acadêmica
+│   │   └── ai/               # Chat RAG e processamento multimodal com Gemini
 │   ├── vercel.json           # Configuração de deploy serverless
 │   ├── tsconfig.json         # TypeScript ~6.0.0
 │   └── .env.example          # Exemplo de variáveis locais
 │
-└── frontend/                 # Next.js 15 (App Router, Tailwind, Shadcn)
+└── frontend/                 # Next.js 16 (App Router, Tailwind 4, Shadcn)
     ├── src/
     │   ├── app/              # Rotas: /, /history, /result/[id]
-    │   ├── components/       # Header, ChatPanel, ApiKeysDialog, HowToUseDialog, viewers
+    │   ├── components/       # Header, ChatPanel, FileDropzone, ApiKeysDialog, HowToUseDialog, viewers
     │   └── lib/              # API Client (BYOK headers), Storage (LocalStorage + Backup)
     └── .env.example          # Exemplo de variáveis frontend
 ```
+
+---
+
+## 🔌 Endpoints da API
+
+| Método | Endpoint | Descrição |
+|---|---|---|
+| `POST` | `/api/scrape` | Extrai página web ou PDF direto em Markdown limpo |
+| `POST` | `/api/scrape/crawl` | Varre recursivamente documentações técnicas até um limite de páginas |
+| `POST` | `/api/scrape/extract` | Extrai JSON estruturado com prompt e schema personalizado |
+| `POST` | `/api/scrape/upload` | Processa arquivos locais ou prints Base64 via Gemini Multimodal |
+| `POST` | `/api/scrape/reconstruct` | Resgata DOI via Unpaywall ou gera síntese acadêmica por literatura |
+| `POST` | `/api/chat/:jobId` | Envia pergunta no chat fundamentada estritamente no documento extraído |
 
 ---
 
@@ -141,7 +158,7 @@ O SynapWeb foi desenvolvido em formato monorepo serverless:
    - **Framework Preset:** `Other`.
    - Clique em **Deploy** e copie o domínio gerado (ex: `https://synap-web-api.vercel.app`).
 
-2. **Deploy do Frontend (Next.js 15):**
+2. **Deploy do Frontend (Next.js 16):**
    - Importe o mesmo repositório na Vercel.
    - Nome do projeto: `synap-web-frontend`.
    - **Root Directory:** selecione `frontend`.
