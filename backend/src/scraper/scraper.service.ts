@@ -136,9 +136,18 @@ export class ScraperService {
     if (dto.textContent) {
       contentMd = dto.textContent;
     } else if (dto.base64) {
+      let mime = dto.mimeType || 'application/pdf';
+      if (!mime || mime === 'application/octet-stream') {
+        const ext = dto.filename.split('.').pop()?.toLowerCase();
+        if (ext === 'png') mime = 'image/png';
+        else if (ext === 'jpg' || ext === 'jpeg') mime = 'image/jpeg';
+        else if (ext === 'webp') mime = 'image/webp';
+        else if (ext === 'gif') mime = 'image/gif';
+        else mime = 'application/pdf';
+      }
       contentMd = await this.gemini.processMultimodalFile(
         dto.base64,
-        dto.mimeType,
+        mime,
         dto.prompt,
         customGeminiKey,
       );

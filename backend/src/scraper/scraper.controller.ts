@@ -10,7 +10,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ScraperService } from './scraper.service';
-import { ScrapeUrlDto, CrawlDomainDto, ExtractJsonDto } from './dto/scrape.dto';
+import {
+  ScrapeUrlDto,
+  CrawlDomainDto,
+  ExtractJsonDto,
+  UploadFileDto,
+  ReconstructPaperDto,
+} from './dto/scrape.dto';
 
 @Controller('scrape')
 export class ScraperController {
@@ -51,7 +57,7 @@ export class ScraperController {
   @Post('upload')
   @HttpCode(HttpStatus.OK)
   async uploadFile(
-    @Body() dto: any,
+    @Body() dto: UploadFileDto,
     @Headers('x-gemini-key') customGeminiKey?: string,
   ) {
     return this.scraperService.processUpload(dto, customGeminiKey);
@@ -60,7 +66,7 @@ export class ScraperController {
   @Post('reconstruct')
   @HttpCode(HttpStatus.OK)
   async reconstructPaper(
-    @Body() dto: any,
+    @Body() dto: ReconstructPaperDto,
     @Headers('x-firecrawl-key') customFirecrawlKey?: string,
     @Headers('x-gemini-key') customGeminiKey?: string,
   ) {

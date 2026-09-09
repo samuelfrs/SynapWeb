@@ -8,6 +8,8 @@ import { ValidationPipe } from '@nestjs/common';
 import express, { Express } from 'express';
 
 const server: Express = express();
+server.use(express.json({ limit: '50mb' }));
+server.use(express.urlencoded({ limit: '50mb', extended: true }));
 let isReady = false;
 
 // Root landing route directly on express
@@ -30,6 +32,7 @@ const createServer = async () => {
   if (isReady) return server;
   
   const app = await NestFactory.create(AppModule, new ExpressAdapter(server), {
+    bodyParser: false,
     logger: ['error', 'warn'],
   });
   

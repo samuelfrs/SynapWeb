@@ -59,7 +59,9 @@ export function ChatPanel({ jobId, content }: ChatPanelProps) {
 
     try {
       const history = messages.map((m) => ({ role: m.role, content: m.content }));
-      const assistantMessage = await sendChatMessage(jobId, userMessage, content, history);
+      // Safe content truncation to prevent huge network overhead (first 35,000 chars is plenty for RAG context)
+      const safeContent = content ? content.substring(0, 35000) : undefined;
+      const assistantMessage = await sendChatMessage(jobId, userMessage, safeContent, history);
       // Replace temp message and add assistant response
       setMessages((prev) => {
         const withoutTemp = prev.filter((m) => m.id !== tempUserMsg.id);
@@ -69,17 +71,21 @@ export function ChatPanel({ jobId, content }: ChatPanelProps) {
           assistantMessage,
         ];
       });
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `error-${Date.now()}`,
-          jobId,
-          role: 'assistant',
-          content: 'Desculpe, ocorreu um erro ao processar sua pergunta. Tente novamente.',
-          createdAt: new Date().toISOString(),
-        },
-      ]);
+    } catch (err: any) {
+      const errorDetail = err?.message || 'Falha de comunicação com o servidor.';
+      setMessages((prev) => {
+        const withoutTemp = prev.filter((m) => m.id !== tempUserMsg.id);
+        return [
+          ...withoutTemp,
+          {
+            id: `error-${Date.now()}`,
+            jobId,
+            role: 'assistant',
+            content: `⚠️ **Não foi possível obter resposta:**\n\n${errorDetail}\n\n*Dica: Verifique se o servidor backend está rodando e se sua chave Gemini está configurada em "Chaves de API" no topo da página.*`,
+            createdAt: new Date().toISOString(),
+          },
+        ];
+      });
     } finally {
       setLoading(false);
     }

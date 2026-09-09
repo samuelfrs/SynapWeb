@@ -5,9 +5,10 @@ export class GeminiService {
   private readonly logger = new Logger(GeminiService.name);
   private readonly apiKey = process.env.GEMINI_API_KEY || '';
   private readonly candidateModels = [
-    process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite-preview',
+    process.env.GEMINI_MODEL || 'gemini-3.6-flash',
+    'gemini-3.1-flash-lite-preview',
+    'gemini-3.5-flash',
     'gemini-3-flash-preview',
-    'gemini-flash-latest',
   ];
 
   async chatWithContent(
@@ -52,7 +53,12 @@ export class GeminiService {
         if (!res.ok) {
           const errText = await res.text();
           this.logger.warn(`Model ${model} returned HTTP ${res.status}: ${errText}. Attempting next model...`);
-          lastError = new Error(`Gemini API error: ${res.statusText}`);
+          try {
+            const parsedErr = JSON.parse(errText);
+            lastError = new Error(parsedErr?.error?.message || `Gemini API HTTP ${res.status}`);
+          } catch {
+            lastError = new Error(`Gemini API error (${res.status}): ${res.statusText || errText}`);
+          }
           continue;
         }
 
@@ -172,6 +178,7 @@ Diretrizes:
       },
     ];
 
+    let lastError: Error | null = null;
     for (const model of this.candidateModels) {
       try {
         const res = await fetch(
@@ -186,6 +193,12 @@ Diretrizes:
         if (!res.ok) {
           const errText = await res.text();
           this.logger.warn(`Gemini multimodal attempt on ${model} failed (${res.status}): ${errText}`);
+          try {
+            const parsedErr = JSON.parse(errText);
+            lastError = new Error(parsedErr?.error?.message || `Gemini API HTTP ${res.status}`);
+          } catch {
+            lastError = new Error(`Gemini API error (${res.status}): ${res.statusText || errText}`);
+          }
           continue;
         }
 
@@ -194,10 +207,11 @@ Diretrizes:
         if (text) return text;
       } catch (err: any) {
         this.logger.warn(`Gemini multimodal error on ${model}: ${err.message}`);
+        lastError = err;
       }
     }
 
-    throw new Error('Não foi possível processar o arquivo anexado via Gemini.');
+    throw lastError || new Error('Não foi possível processar o arquivo anexado via Gemini.');
   }
 
   async synthesizeLiterature(

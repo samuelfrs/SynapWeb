@@ -19,7 +19,8 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
   const [job, setJob] = useState<ScrapeJob | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [copiedLlm, setCopiedLlm] = useState(false);
+  const [copiedLlmCompact, setCopiedLlmCompact] = useState(false);
+  const [copiedLlmFull, setCopiedLlmFull] = useState(false);
 
   useEffect(() => {
     getJob(id)
@@ -28,17 +29,48 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
       .finally(() => setLoading(false));
   }, [id, router]);
 
+  const condenseContentForLlm = (text: string, maxLength: number = 8000): string => {
+    if (!text) return '';
+
+    // 1. Strip image tags: ![alt](url) -> ""
+    let cleaned = text.replace(/!\[.*?\]\(.*?\)/g, '');
+    // 2. Simplify links: [title](url) -> title
+    cleaned = cleaned.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+    // 3. Remove excessive blank lines
+    cleaned = cleaned.replace(/\n{3,}/g, '\n\n').trim();
+    // 4. Clean base64 data URIs
+    cleaned = cleaned.replace(/data:[^;]+;base64,[A-Za-z0-9+/=]+/g, '[dados incorporados]');
+
+    if (cleaned.length <= maxLength) return cleaned;
+
+    // 5. Intelligent excerpt: beginning (title, intro, headers) + end (conclusions, data)
+    const headSize = Math.floor(maxLength * 0.65);
+    const tailSize = Math.floor(maxLength * 0.3);
+    const head = cleaned.substring(0, headSize).trim();
+    const tail = cleaned.substring(cleaned.length - tailSize).trim();
+
+    return `${head}\n\n[... trecho intermediário condensado para limite do chat ...]\n\n${tail}`;
+  };
+
   const handleCopy = async (text: string) => {
     await navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleCopyLlm = async (text: string, jobUrl: string) => {
-    const formatted = `Você é um assistente técnico especialista. Abaixo está o conteúdo extraído da página ${jobUrl}:\n\n=== CONTEÚDO EXTRAÍDO ===\n${text}\n=== FIM DO CONTEÚDO ===\n\nCom base estritamente nas informações acima, por favor responda:`;
-    await navigator.clipboard.writeText(formatted);
-    setCopiedLlm(true);
-    setTimeout(() => setCopiedLlm(false), 2000);
+  const handleCopyLlm = async (text: string, jobUrl: string, mode: 'compact' | 'full' = 'compact') => {
+    if (mode === 'compact') {
+      const condensed = condenseContentForLlm(text, 8500);
+      const formatted = `Documento / Fonte: ${jobUrl}\n\n--- INÍCIO DO CONTEÚDO (SINTETIZADO P/ CHAT) ---\n${condensed}\n--- FIM DO CONTEÚDO ---\n\nInstrução: Com base nas informações acima, responda de forma objetiva:`;
+      await navigator.clipboard.writeText(formatted);
+      setCopiedLlmCompact(true);
+      setTimeout(() => setCopiedLlmCompact(false), 2000);
+    } else {
+      const formatted = `Documento / Fonte: ${jobUrl}\n\n=== CONTEÚDO EXTRAÍDO COMPLETO ===\n${text}\n=== FIM DO CONTEÚDO ===\n\nInstrução: Com base nas informações acima, por favor responda:`;
+      await navigator.clipboard.writeText(formatted);
+      setCopiedLlmFull(true);
+      setTimeout(() => setCopiedLlmFull(false), 2000);
+    }
   };
 
   const handleDownload = (content: string, filename: string) => {
@@ -93,9 +125,16 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
                 {new Date(job.createdAt).toLocaleString('pt-BR')}
               </span>
               {content && (
-                <span className="text-xs text-emerald-400 font-medium">
-                  • ~{Math.ceil(content.length / 4).toLocaleString()} tokens (Cabe em GPT-4o, Claude, Gemini)
-                </span>
+                <div className="flex items-center gap-1.5 text-xs flex-wrap">
+                  <span className="text-emerald-400 font-medium">
+                    • ~{Math.ceil(content.length / 4).toLocaleString()} tokens
+                  </span>
+                  {content.length > 8500 && (
+                    <span className="text-muted-foreground text-[11px]">
+                      (Resumo p/ chat: ~2.100 tokens)
+                    </span>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -113,11 +152,21 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleCopyLlm(content, job.url)}
-            title="Copiar com prompt pronto para colar no ChatGPT, Claude ou Cursor"
+            onClick={() => handleCopyLlm(content, job.url, 'compact')}
+            title="Copiar com prompt resumido e compacto (cabe com folga no ChatGPT, Claude, DeepSeek)"
+            className="border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary font-medium"
           >
-            {copiedLlm ? <Check className="mr-1.5 h-4 w-4 text-emerald-400" /> : <Sparkles className="mr-1.5 h-4 w-4 text-primary" />}
-            {copiedLlm ? 'Copiado p/ LLM!' : 'Copiar p/ LLM'}
+            {copiedLlmCompact ? <Check className="mr-1.5 h-4 w-4 text-emerald-400" /> : <Sparkles className="mr-1.5 h-4 w-4 text-primary" />}
+            {copiedLlmCompact ? 'Copiado Resumido!' : 'Copiar p/ LLM (Resumido)'}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleCopyLlm(content, job.url, 'full')}
+            title="Copiar todo o documento com prompt de sistema (ideal para modelos de contexto amplo)"
+          >
+            {copiedLlmFull ? <Check className="mr-1.5 h-4 w-4 text-emerald-400" /> : <Sparkles className="mr-1.5 h-4 w-4 opacity-50" />}
+            {copiedLlmFull ? 'Copiado Completo!' : 'Copiar p/ LLM (Completo)'}
           </Button>
           <Button
             variant="outline"

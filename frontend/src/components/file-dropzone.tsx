@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { UploadCloud, FileText, Image as ImageIcon, File, X, Loader2, Sparkles, Clipboard } from 'lucide-react';
+import { UploadCloud, FileText, Image as ImageIcon, File as FileIcon, X, Loader2, Sparkles, Clipboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { uploadFile } from '@/lib/api';
@@ -21,6 +21,22 @@ export function FileDropzone({ onSuccess }: FileDropzoneProps) {
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
+  // Helper to reliably detect MIME type even if file.type is blank or generic
+  const detectMimeType = (file: File): string => {
+    if (file.type && file.type !== 'application/octet-stream') return file.type;
+    const name = file.name.toLowerCase();
+    if (name.endsWith('.png')) return 'image/png';
+    if (name.endsWith('.jpg') || name.endsWith('.jpeg')) return 'image/jpeg';
+    if (name.endsWith('.webp')) return 'image/webp';
+    if (name.endsWith('.gif')) return 'image/gif';
+    if (name.endsWith('.pdf')) return 'application/pdf';
+    if (name.endsWith('.txt')) return 'text/plain';
+    if (name.endsWith('.md')) return 'text/markdown';
+    if (name.endsWith('.csv')) return 'text/csv';
+    if (name.endsWith('.json')) return 'application/json';
+    return file.type || 'application/octet-stream';
+  };
+
   // Global Ctrl+V listener for image pasting
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
@@ -30,7 +46,12 @@ export function FileDropzone({ onSuccess }: FileDropzoneProps) {
         if (items[i].type.startsWith('image/')) {
           const file = items[i].getAsFile();
           if (file) {
-            handleFileSelect(file);
+            // Assign descriptive filename with timestamp
+            const ext = items[i].type.split('/')[1] || 'png';
+            const namedFile = new File([file], `print-screen-${Date.now()}.${ext}`, {
+              type: items[i].type || 'image/png',
+            });
+            handleFileSelect(namedFile);
             break;
           }
         }
@@ -49,8 +70,9 @@ export function FileDropzone({ onSuccess }: FileDropzoneProps) {
     }
 
     setSelectedFile(file);
+    const mime = detectMimeType(file);
 
-    if (file.type.startsWith('image/')) {
+    if (mime.startsWith('image/')) {
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
     } else {
@@ -95,19 +117,26 @@ export function FileDropzone({ onSuccess }: FileDropzoneProps) {
     setError(null);
 
     try {
+      const mime = detectMimeType(selectedFile);
       const isTextFile =
-        selectedFile.type.startsWith('text/') ||
+        mime.startsWith('text/') ||
         selectedFile.name.endsWith('.txt') ||
         selectedFile.name.endsWith('.md') ||
         selectedFile.name.endsWith('.csv') ||
-        selectedFile.name.endsWith('.json');
+        selectedFile.name.endsWith('.json') ||
+        selectedFile.name.endsWith('.ts') ||
+        selectedFile.name.endsWith('.js') ||
+        selectedFile.name.endsWith('.py') ||
+        selectedFile.name.endsWith('.html') ||
+        selectedFile.name.endsWith('.xml') ||
+        selectedFile.name.endsWith('.log');
 
       if (isTextFile) {
         // Read text directly
         const textContent = await selectedFile.text();
         const job = await uploadFile({
           filename: selectedFile.name,
-          mimeType: selectedFile.type || 'text/plain',
+          mimeType: mime.startsWith('text/') ? mime : 'text/plain',
           textContent,
           prompt: customPrompt || undefined,
         });
@@ -121,10 +150,13 @@ export function FileDropzone({ onSuccess }: FileDropzoneProps) {
           try {
             const dataUrl = reader.result as string;
             const base64 = dataUrl.split(',')[1];
+            if (!base64) {
+              throw new Error('Falha ao codificar arquivo em Base64.');
+            }
 
             const job = await uploadFile({
               filename: selectedFile.name,
-              mimeType: selectedFile.type || 'application/pdf',
+              mimeType: mime,
               base64,
               prompt: customPrompt || undefined,
             });
@@ -136,6 +168,10 @@ export function FileDropzone({ onSuccess }: FileDropzoneProps) {
             setLoading(false);
           }
         };
+        reader.onerror = () => {
+          setError('Falha ao ler o arquivo local.');
+          setLoading(false);
+        };
         reader.readAsDataURL(selectedFile);
       }
     } catch (err: any) {
@@ -146,9 +182,10 @@ export function FileDropzone({ onSuccess }: FileDropzoneProps) {
 
   const getFileIcon = () => {
     if (!selectedFile) return UploadCloud;
-    if (selectedFile.type.startsWith('image/')) return ImageIcon;
-    if (selectedFile.type === 'application/pdf' || selectedFile.name.endsWith('.pdf')) return FileText;
-    return File;
+    const mime = detectMimeType(selectedFile);
+    if (mime.startsWith('image/')) return ImageIcon;
+    if (mime === 'application/pdf' || selectedFile.name.endsWith('.pdf')) return FileText;
+    return FileIcon;
   };
 
   const Icon = getFileIcon();
@@ -218,7 +255,7 @@ export function FileDropzone({ onSuccess }: FileDropzoneProps) {
                   {selectedFile.name}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {(selectedFile.size / 1024 / 1024).toFixed(2)} MB • {selectedFile.type || 'Documento'}
+                  {(selectedFile.size / 1024 / 1024).toFixed(2)} MB • {detectMimeType(selectedFile)}
                 </p>
               </div>
             </div>
