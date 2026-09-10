@@ -18,10 +18,10 @@
 
 ### 🌐 1. Scrape URL Cirúrgico
 - Extrai conteúdo de páginas da web ou links diretos para PDFs em Markdown perfeitamente formatado para LLMs.
-- Higienização automática: remove elementos ruidosos como barras de navegação, modais, anúncios, rodapés e scripts rastreadores.
+- Higienização automática ativa: remove elementos ruidosos como barras de navegação, modais, anúncios, imagens de banners publicitários, pixels 1x1, rodapés e scripts rastreadores.
 
 ### 📁 2. Crawl Recursivo de Documentações (Crawl Docs)
-- Mapeia e varre recursivamente documentações técnicas inteiras em lote (com limite configurável de até 50 subpáginas).
+- Mapeia e varre recursivamente documentações técnicas inteiras em lote com opções objetivas de **10 págs** (rápido e direto) e **Max** (máximo viável suportado pela janela de conexão com resgate automático de páginas coletadas).
 - Consolida o conhecimento de várias páginas em um único documento unificado, estruturado para contextualização rápida de LLMs ou indexação vetorial.
 
 ### 🏷️ 3. Extração Estruturada em JSON (com IA)
@@ -43,10 +43,12 @@
 - Respostas fundamentadas estritamente no conteúdo extraído, com retenção de memória de conversação.
 - **Ações Rápidas em 1 Clique:** Atalhos rápidos para gerar resumo executivo, sintetizar conclusões, traduzir ou elaborar um FAQ completo.
 
-### ⚡ 7. Otimização e Cópia Especializada para LLMs (Dual Mode)
+### ⚡ 7. Otimização e Cópia Especializada para LLMs (Três Modos com Guia Integrado)
+- **📋 Copiar Puro:** Cópia fiel do Markdown ou JSON exatamente como extraído, sem prompts artificiais, para salvar em arquivos locais, notas (Obsidian, Notion) ou código.
 - **⚡ Copiar p/ LLM (Resumido):** Sanitiza links irrelevantes, elimina imagens e formatações pesadas e aplica algoritmo de excerto inteligente (início estruturante + desfecho com conclusões) delimitado a **~2.100 tokens (~8.500 caracteres)**. Garante compatibilidade imediata com limites de contexto de chats gratuitos como ChatGPT Free, Claude Free, DeepSeek ou extensões de IDE como Cursor.
-- **📜 Copiar p/ LLM (Completo):** Mantém o conteúdo na íntegra com prompt de sistema pronto para modelos de contexto amplo (GPT-4o, Claude 3.5 Sonnet, Gemini 1.5 Pro).
+- **📜 Copiar p/ LLM (Completo):** Mantém o conteúdo 100% na íntegra com prompt de sistema pronto para modelos de contexto amplo (GPT-4o, Claude 3.5 Sonnet, Gemini 1.5 Pro).
 - **Download em Formato Bruto:** Botão para download direto do arquivo em `.md` ou `.json`.
+- **Ajuda de Cópia na Interface:** Card explicativo interativo orientando qual formato escolher conforme a janela do modelo desejado.
 
 ### 🔑 8. Arquitetura BYOK (Bring Your Own Key)
 - Modal integrado no cabeçalho permitindo aos usuários informarem suas próprias chaves de API da **Firecrawl** e **Google Gemini**.

@@ -134,7 +134,7 @@ export default function PlaygroundPage() {
                 type="button"
                 className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3.5 py-1 text-xs font-medium text-primary hover:bg-primary/10 transition-colors cursor-pointer shadow-xs"
               >
-                <span>💡 Como usar em 5 passos</span>
+                <span>💡 Como usar o SynapWeb (6 passos)</span>
                 <span className="text-muted-foreground">→</span>
               </button>
             }
@@ -260,29 +260,40 @@ export default function PlaygroundPage() {
                       <span className="text-xs font-semibold text-foreground">
                         Profundidade da Varredura (Limite de Páginas):
                       </span>
-                      <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
-                        {crawlLimit} páginas
+                      <span className="text-xs font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
+                        {crawlLimit === 10 ? '10 páginas (Rápido)' : 'Max (Máximo possível)'}
                       </span>
                     </div>
-                    <div className="grid grid-cols-4 gap-2">
-                      {[10, 25, 50, 100].map((limit) => (
-                        <button
-                          key={limit}
-                          type="button"
-                          disabled={loading || reconstructing}
-                          onClick={() => setCrawlLimit(limit)}
-                          className={`py-1.5 px-2 rounded-lg text-xs font-medium transition-all ${
-                            crawlLimit === limit
-                              ? 'bg-primary text-primary-foreground shadow-xs scale-[1.02]'
-                              : 'bg-background border border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted'
-                          }`}
-                        >
-                          {limit} págs
-                        </button>
-                      ))}
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <button
+                        type="button"
+                        disabled={loading || reconstructing}
+                        onClick={() => setCrawlLimit(10)}
+                        className={`py-2 px-3 rounded-lg text-xs font-medium transition-all flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
+                          crawlLimit === 10
+                            ? 'bg-primary text-primary-foreground shadow-xs ring-2 ring-primary/30'
+                            : 'bg-background border border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted'
+                        }`}
+                      >
+                        <span className="font-semibold text-sm">10 págs</span>
+                        <span className="text-[10px] opacity-80">Rápido & Direto</span>
+                      </button>
+                      <button
+                        type="button"
+                        disabled={loading || reconstructing}
+                        onClick={() => setCrawlLimit(50)}
+                        className={`py-2 px-3 rounded-lg text-xs font-medium transition-all flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
+                          crawlLimit === 50
+                            ? 'bg-primary text-primary-foreground shadow-xs ring-2 ring-primary/30'
+                            : 'bg-background border border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted'
+                        }`}
+                      >
+                        <span className="font-semibold text-sm">Max</span>
+                        <span className="text-[10px] opacity-80">Máximo possível viável</span>
+                      </button>
                     </div>
                     <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      💡 <em>Cada página consome 1 crédito do Firecrawl. Varreduras de 50 a 100 páginas podem levar entre 30 e 50 segundos.</em>
+                      💡 <em>Escolha <strong>10 págs</strong> para raspagem rápida e recomendada ou <strong>Max</strong> para documentos extensos com resgate automático das páginas capturadas antes do limite de tempo.</em>
                     </p>
                   </div>
                 )}
@@ -293,7 +304,7 @@ export default function PlaygroundPage() {
                   </Badge>
                   <span className="text-xs text-muted-foreground">
                     {mode === 'SCRAPE' && 'Suporta sites, SPAs e links de PDF'}
-                    {mode === 'CRAWL' && `Varre subpáginas recursivamente (limite selecionado: ${crawlLimit} páginas)`}
+                    {mode === 'CRAWL' && `Varre subpáginas recursivamente (${crawlLimit === 10 ? '10 páginas' : 'Máximo possível'})`}
                     {mode === 'EXTRACT' && 'Extrai dados em JSON com IA'}
                     {mode === 'RECONSTRUCT' && 'Recupera preprints no Unpaywall ou sintetiza consenso acadêmico por IA'}
                   </span>

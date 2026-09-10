@@ -2,7 +2,7 @@
 
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Copy, Download, Check, FileText, FileJson, Info, MessageSquare, Sparkles } from 'lucide-react';
+import { ArrowLeft, Copy, Download, Check, FileText, FileJson, Info, MessageSquare, Sparkles, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -21,6 +21,7 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
   const [copied, setCopied] = useState(false);
   const [copiedLlmCompact, setCopiedLlmCompact] = useState(false);
   const [copiedLlmFull, setCopiedLlmFull] = useState(false);
+  const [showCopyGuide, setShowCopyGuide] = useState(false);
 
   useEffect(() => {
     getJob(id)
@@ -142,32 +143,50 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
 
         <div className="flex items-center flex-wrap gap-2">
           <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowCopyGuide(!showCopyGuide)}
+            className="text-xs text-muted-foreground hover:text-primary gap-1 cursor-pointer"
+            title="Como escolher o botão de cópia ideal?"
+          >
+            <HelpCircle className="h-3.5 w-3.5 text-primary" />
+            <span className="hidden sm:inline">Ajuda de Cópia</span>
+          </Button>
+
+          <Button
             variant="outline"
             size="sm"
             onClick={() => handleCopy(content)}
+            title="Copiar Markdown ou JSON original puro, sem cabeçalhos ou prompts"
           >
             {copied ? <Check className="mr-1.5 h-4 w-4 text-emerald-400" /> : <Copy className="mr-1.5 h-4 w-4" />}
-            {copied ? 'Copiado!' : 'Copiar'}
+            {copied ? 'Copiado!' : 'Copiar Puro'}
           </Button>
+
           <Button
             variant="outline"
             size="sm"
             onClick={() => handleCopyLlm(content, job.url, 'compact')}
-            title="Copiar com prompt resumido e compacto (cabe com folga no ChatGPT, Claude, DeepSeek)"
-            className="border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary font-medium"
+            title="Copiar com prompt resumido (~2.100 tokens) - ideal para ChatGPT Free, Claude Free e DeepSeek"
+            className="border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary font-medium gap-1.5"
           >
-            {copiedLlmCompact ? <Check className="mr-1.5 h-4 w-4 text-emerald-400" /> : <Sparkles className="mr-1.5 h-4 w-4 text-primary" />}
-            {copiedLlmCompact ? 'Copiado Resumido!' : 'Copiar p/ LLM (Resumido)'}
+            {copiedLlmCompact ? <Check className="h-4 w-4 text-emerald-400" /> : <Sparkles className="h-4 w-4 text-primary" />}
+            <span>{copiedLlmCompact ? 'Copiado Resumido!' : 'Copiar p/ LLM (Resumido)'}</span>
+            <span className="text-[10px] bg-primary/15 text-primary px-1.5 py-0.2 rounded font-mono font-normal">~2k tok</span>
           </Button>
+
           <Button
             variant="outline"
             size="sm"
             onClick={() => handleCopyLlm(content, job.url, 'full')}
-            title="Copiar todo o documento com prompt de sistema (ideal para modelos de contexto amplo)"
+            title="Copiar 100% do documento na íntegra com prompt de sistema pronto para modelos de contexto amplo (GPT-4o, Claude Sonnet, Gemini Pro)"
+            className="gap-1.5"
           >
-            {copiedLlmFull ? <Check className="mr-1.5 h-4 w-4 text-emerald-400" /> : <Sparkles className="mr-1.5 h-4 w-4 opacity-50" />}
-            {copiedLlmFull ? 'Copiado Completo!' : 'Copiar p/ LLM (Completo)'}
+            {copiedLlmFull ? <Check className="h-4 w-4 text-emerald-400" /> : <Sparkles className="h-4 w-4 opacity-50" />}
+            <span>{copiedLlmFull ? 'Copiado Completo!' : 'Copiar p/ LLM (Completo)'}</span>
+            <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.2 rounded font-mono font-normal">100%</span>
           </Button>
+
           <Button
             variant="outline"
             size="sm"
@@ -181,6 +200,7 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
             <Download className="mr-1.5 h-4 w-4" />
             Download
           </Button>
+
           <Sheet>
             <SheetTrigger
               render={
@@ -196,6 +216,56 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
           </Sheet>
         </div>
       </div>
+
+      {/* Guia Explicativo dos Botões de Cópia */}
+      {showCopyGuide && (
+        <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 text-xs space-y-3 transition-all">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 font-semibold text-foreground text-sm">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <span>Guia de Cópia: Qual formato escolher e como usar?</span>
+            </div>
+            <button
+              onClick={() => setShowCopyGuide(false)}
+              className="text-muted-foreground hover:text-foreground text-xs cursor-pointer px-2 py-0.5 rounded hover:bg-muted"
+            >
+              ✕ Fechar guia
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="bg-background/90 rounded-lg p-3 border border-border/60 space-y-1.5">
+              <div className="font-semibold text-foreground flex items-center gap-1.5">
+                <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                <span>1. Copiar Puro</span>
+              </div>
+              <p className="text-muted-foreground leading-relaxed text-[11px]">
+                <strong>O que faz:</strong> Copia o Markdown ou JSON exatamente como extraído, sem prompts artificiais.<br />
+                <strong>Quando usar:</strong> Para salvar em arquivos locais, notas (Obsidian, Notion), VS Code ou integrar em APIs.
+              </p>
+            </div>
+            <div className="bg-background/90 rounded-lg p-3 border border-primary/30 space-y-1.5">
+              <div className="font-semibold text-primary flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                <span>2. Copiar p/ LLM (Resumido)</span>
+              </div>
+              <p className="text-muted-foreground leading-relaxed text-[11px]">
+                <strong>O que faz:</strong> Sintetiza o texto em ~2.100 tokens mantendo o início estruturante e conclusões, já com prompt de pergunta.<br />
+                <strong>Quando usar:</strong> Ideal para <strong>ChatGPT Free, Claude Free, DeepSeek e Cursor</strong> sem estourar limites de contexto.
+              </p>
+            </div>
+            <div className="bg-background/90 rounded-lg p-3 border border-border/60 space-y-1.5">
+              <div className="font-semibold text-purple-400 flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-purple-400" />
+                <span>3. Copiar p/ LLM (Completo)</span>
+              </div>
+              <p className="text-muted-foreground leading-relaxed text-[11px]">
+                <strong>O que faz:</strong> Preserva 100% do texto original com prompt de sistema pronto para contextualização de IA.<br />
+                <strong>Quando usar:</strong> Recomendado para modelos com janelas amplas (<strong>GPT-4o, Claude 3.5 Sonnet, Gemini 1.5 Pro</strong>).
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Special Information Banners */}
       {job.metadata?.isReconstructed && (

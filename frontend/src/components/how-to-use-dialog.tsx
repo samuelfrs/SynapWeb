@@ -16,6 +16,8 @@ import {
   CheckCircle2,
   Sparkles,
   ExternalLink,
+  FileUp,
+  Copy,
 } from 'lucide-react';
 import {
   Dialog,
@@ -55,122 +57,154 @@ const steps: Step[] = [
   {
     id: 1,
     title: '1. Chaves de API (BYOK)',
-    badge: 'Uso Ilimitado',
+    badge: 'Uso Ilimitado & Grátis',
     icon: Key,
     headline: 'Conecte suas chaves gratuitas do Firecrawl e Gemini',
     description:
-      'Para utilizar a aplicação de forma ilimitada sem depender dos créditos do servidor, você pode cadastrar suas chaves gratuitas de API.',
+      'Para utilizar a aplicação de forma ilimitada sem depender de créditos do servidor, você pode cadastrar suas chaves gratuitas de API no botão "Chaves de API" no topo da página:',
     details: [
       {
         title: 'Chave Firecrawl (Scraping & Crawling):',
-        text: 'Crie uma conta gratuita em firecrawl.dev para receber créditos de extração de páginas e PDFs.',
+        text: 'Crie uma conta gratuita em firecrawl.dev para receber créditos mensais para raspagem de páginas e PDFs.',
         link: 'https://www.firecrawl.dev',
         linkText: 'Criar no Firecrawl.dev',
       },
       {
-        title: 'Chave Google Gemini (Chat & IA):',
-        text: 'Gere uma chave 100% gratuita no Google AI Studio para usar os modelos Gemini no chat e extrações.',
+        title: 'Chave Google Gemini (Chat, IA & Multimodal):',
+        text: 'Gere uma chave 100% gratuita no Google AI Studio para usar os modelos Gemini no chat, extrações e visão multimodal.',
         link: 'https://aistudio.google.com/app/apikey',
         linkText: 'Criar no Google AI Studio',
       },
     ],
-    tip: '🔒 Suas chaves ficam guardadas apenas no LocalStorage do seu navegador. Elas nunca são salvas no banco de dados do servidor.',
+    tip: '🔒 Suas chaves ficam salvas estritamente no LocalStorage do seu navegador. Elas nunca são gravadas no banco de dados do servidor.',
   },
   {
     id: 2,
-    title: '2. Escolha o Modo de Extração',
-    badge: '3 Modos Poderosos',
+    title: '2. Extração Web & Docs',
+    badge: 'Scrape, Crawl & JSON',
     icon: Globe,
-    headline: 'Converta qualquer conteúdo da web para Markdown ou JSON',
+    headline: 'Converta qualquer conteúdo da web para Markdown limpo ou JSON',
     description:
-      'Cole a URL de qualquer site, documentação ou PDF no campo de busca e escolha o modo desejado:',
+      'Cole a URL de qualquer site, documentação ou PDF no campo de busca e escolha o modo ideal:',
     details: [
       {
-        title: '🌐 Scrape URL (Mais comum):',
-        text: 'Extrai uma única página, post de blog, artigo científico ou arquivo PDF direto em Markdown limpo, removendo cabeçalhos, menus e anúncios.',
+        title: '🌐 Scrape URL (Cirúrgico):',
+        text: 'Extrai uma única página, post ou PDF direto em Markdown limpo. O motor higieniza o conteúdo removendo anúncios, banners, imagens publicitárias, menus, avisos de cookies e rodapés.',
       },
       {
-        title: '📁 Crawl Docs:',
-        text: 'Varre uma documentação inteira recursivamente (até 10 páginas) e consolida todo o conteúdo em um documento único pronto para RAG.',
+        title: '📁 Crawl Docs (10 págs e Max):',
+        text: 'Varre documentações inteiras recursivamente em lote. Escolha "10 págs" para consultas rápidas ou "Max" para raspar o máximo de páginas viáveis dentro do tempo limite com resgate de páginas parciais.',
       },
       {
-        title: '🏷️ Extrair JSON:',
-        text: 'Extrai dados estruturados com IA. Você pode escrever em português o que quer extrair (ex: "Extraia título, resumo, tópicos e preços").',
+        title: '🏷️ Extrair JSON com IA:',
+        text: 'Extrai dados estruturados escrevendo em linguagem natural o que deseja capturar (ex: "Extraia título, resumo, metodologia e métricas"). Opera com Firecrawl v2 e fallback Gemini.',
       },
     ],
-    tip: '💡 Dica: URLs de PDFs acadêmicos (como ACM Digital Library e arXiv) são normalizadas automaticamente para extrair o artigo completo.',
+    tip: '💡 A higienização automática preserva a formatação original e blocos de código intactos enquanto elimina elementos espúrios e poluição visual.',
   },
   {
     id: 3,
-    title: '3. Visualize, Copie e Baixe',
-    badge: 'Exportação Instantânea',
-    icon: FileText,
-    headline: 'Três visualizações para atender às suas necessidades',
+    title: '3. Papers & Meio Científico',
+    badge: 'Pesquisa Acadêmica',
+    icon: Sparkles,
+    headline: 'Desbloqueio de artigos, preprints abertos e síntese por citações',
     description:
-      'Assim que a extração termina, você é direcionado para a tela de resultados com abas dedicadas:',
+      'Desenvolvido para pesquisadores, pós-graduandos e cientistas de dados superarem paywalls acadêmicos comerciais de forma legítima:',
     details: [
       {
-        title: 'Aba Markdown:',
-        text: 'Alterne entre o Preview formatado (com suporte a tabelas, códigos e imagens) e o Código-Fonte puro.',
+        title: '🔓 Desbloqueio Legal via Unpaywall:',
+        text: 'Cole a URL da publicação (ACM, IEEE, Nature, Springer, etc.) ou o DOI (ex: 10.1145/3065386). O sistema consulta o Unpaywall e recupera preprints e versões abertas autorizadas pelos próprios autores.',
       },
       {
-        title: 'Aba JSON:',
-        text: 'Navegue por uma árvore interativa de nós expansíveis com sintaxe colorida dos dados estruturados.',
+        title: '🔬 Dossiê de Reconstrução por Literatura & Citações:',
+        text: 'Caso o artigo esteja fechado por paywall rígido ou bloqueio de bot, a IA mapeia artigos indexados e citações dos pares para reconstruir tese, metodologia, métricas e consenso científico.',
       },
       {
-        title: 'Aba Metadados:',
-        text: 'Confira status HTTP, contagem de tokens estimados, tamanho em KB e data da raspagem.',
+        title: '⚡ Sugestão Automática de Resgate:',
+        text: 'Se uma extração tradicional sofrer bloqueio anti-bot em link acadêmico, a tela sugere um botão de 1 clique para ativar a Reconstrução Científica.',
       },
     ],
-    tip: 'Use os botões "Copiar" ou "Download (.md / .json)" no topo direito para salvar no seu computador imediatamente.',
+    tip: '🎓 100% legal e fundamentado no Uso Justo (Fair Use) para revisão sistemática da literatura.',
   },
   {
     id: 4,
-    title: '4. Converse com o Documento (RAG)',
-    badge: 'Gemini Integrado',
-    icon: MessageSquare,
-    headline: 'Tire dúvidas e faça perguntas com IA sobre o conteúdo',
+    title: '4. Arquivos & Print (Ctrl+V)',
+    badge: 'Multimodal (até 50MB)',
+    icon: FileUp,
+    headline: 'Suba PDFs locais, códigos ou cole prints da tela instantaneamente',
     description:
-      'No canto superior direito da página de resultado, clique no botão "Chat" para abrir o painel lateral:',
+      'Alterne para a aba "Anexar / Print (Ctrl+V)" para processar dados locais ou visuais com o Gemini Multimodal:',
     details: [
       {
-        title: 'Respostas 100% Fundamentadas:',
-        text: 'A IA utiliza exclusivamente o documento extraído como fonte de conhecimento, evitando alucinações.',
+        title: '📎 Drag & Drop e Seletor:',
+        text: 'Suporte a arquivos PDF, imagens (PNG, JPG, WebP), planilhas CSV, JSON, TXT e código-fonte (TypeScript, Python, HTML, etc.).',
       },
       {
-        title: 'Memória Contextual da Conversa:',
-        text: 'O chat lembra das mensagens anteriores, permitindo fazer perguntas complementares, aprofundamentos ou pedir explicações passo a passo.',
+        title: '📋 Colagem Direta com Ctrl+V (Clipboard):',
+        text: 'Aperte Ctrl+V em qualquer lugar da tela para colar uma captura de tela (print) da área de transferência e extrair tabelas, diagramas e textos de imagens.',
       },
       {
-        title: 'Fallback Automático:',
-        text: 'Se o modelo Gemini enfrentar alta demanda temporária, o sistema alterna silenciosamente para modelos de backup para nunca deixar você sem resposta.',
+        title: '🚀 Suporte a Arquivos de até 50MB:',
+        text: 'Envie documentos volumosos processados de ponta a ponta pelo modelo multimodal.',
       },
     ],
-    tip: 'Exemplo de pergunta: "Faça um resumo dos 3 pontos principais deste artigo em bullet points."',
+    tip: '💡 Dica: Cole um print de um gráfico ou diagrama e utilize o Chat RAG para explicar os dados.',
   },
   {
     id: 5,
-    title: '5. Histórico e Privacidade',
-    badge: 'Local-First',
-    icon: ShieldCheck,
-    headline: 'Seus dados permanecem seguros no seu próprio computador',
+    title: '5. Modos de Cópia & LLMs',
+    badge: 'Exportação Otimizada',
+    icon: FileText,
+    headline: 'Formatos especializados para cada modelo de inteligência artificial',
     description:
-      'O SynapWeb adota uma arquitetura Local-First para garantir a máxima privacidade:',
+      'Na página de resultados, utilize as três opções de cópia projetadas para fluxos de IA:',
     details: [
       {
-        title: 'Tudo no LocalStorage:',
-        text: 'Seus scrapes e conversas são armazenados no seu navegador. Nenhum servidor guarda histórico do que você pesquisou.',
+        title: '📋 1. Copiar Puro:',
+        text: 'Copia o Markdown ou JSON exatamente como extraído, sem prompts artificiais. Ideal para salvar em notas (Obsidian, Notion), VS Code ou integrar em APIs.',
       },
       {
-        title: 'Página de Histórico:',
-        text: 'Acesse o menu "Histórico" a qualquer momento para revisitar suas extrações, abrir chats anteriores ou apagar itens.',
+        title: '⚡ 2. Copiar p/ LLM (Resumido):',
+        text: 'Condensa o documento para ~2.100 tokens mantendo o início estruturante e conclusões, acompanhado de prompt de pergunta. Ideal para ChatGPT Free, Claude Free, DeepSeek e Cursor sem estourar limites.',
       },
       {
-        title: 'Gerenciamento de Espaço:',
-        text: 'O sistema mantém automaticamente as 50 extrações mais recentes para não sobrecarregar a memória do navegador.',
+        title: '📜 3. Copiar p/ LLM (Completo):',
+        text: 'Preserva 100% do texto original na íntegra com prompt de contextualização pronto. Recomendado para modelos de contexto amplo (GPT-4o, Claude 3.5 Sonnet, Gemini 1.5 Pro).',
+      },
+      {
+        title: '💾 Download Direto:',
+        text: 'Baixe o documento bruto em arquivo .md ou .json no seu computador com um clique.',
       },
     ],
-    tip: 'Você tem controle total: apague extrações individuais ou use o botão "Limpar tudo" quando desejar.',
+    tip: '💡 Clique em "Ajuda de Cópia" na barra de ações do resultado para consultar detalhes de cada formato.',
+  },
+  {
+    id: 6,
+    title: '6. Chat RAG & Backup Local',
+    badge: 'Local-First & Privacidade',
+    icon: MessageSquare,
+    headline: 'Sabatinar o documento com IA e gerenciar seu histórico soberano',
+    description:
+      'Converse com os dados extraídos mantendo controle total sobre a sua privacidade:',
+    details: [
+      {
+        title: '💬 Chat RAG Fundamentado:',
+        text: 'Respostas baseadas estritamente no documento extraído para evitar alucinações, com memória de conversação e fallback automático entre modelos Gemini.',
+      },
+      {
+        title: '⚡ Ações Rápidas de 1 Clique:',
+        text: 'Atalhos no painel do chat para gerar Resumo Executivo, Conclusões Principais, Tradução ou FAQ completo em segundos.',
+      },
+      {
+        title: '🔒 Arquitetura Local-First (Zero Database):',
+        text: 'Nenhum histórico é gravado no servidor. Tudo fica salvo no LocalStorage do seu próprio navegador.',
+      },
+      {
+        title: '📦 Backup e Portabilidade:',
+        text: 'Na página de Histórico, use "Exportar Backup (JSON)" para salvar seus dados e "Importar Histórico" para migrar para outro navegador ou dispositivo.',
+      },
+    ],
+    tip: 'Você tem controle total: delete extrações individuais ou limpe todo o histórico quando desejar.',
   },
 ];
 
@@ -204,7 +238,7 @@ export function HowToUseDialog({ trigger }: HowToUseDialogProps) {
             <div>
               <DialogTitle className="text-lg">Como Usar o SynapWeb</DialogTitle>
               <DialogDescription className="text-xs">
-                Guia rápido em 5 passos para extrair conteúdos da web e conversar com IA
+                Guia prático em 6 passos para dominar extração web, reconstrução de papers e fluxos para LLMs
               </DialogDescription>
             </div>
           </div>

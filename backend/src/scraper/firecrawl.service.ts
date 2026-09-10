@@ -1,4 +1,39 @@
 import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { cleanScrapedMarkdown } from './markdown-cleaner';
+
+const EXCLUDE_TAGS = [
+  'nav',
+  'header',
+  'footer',
+  'aside',
+  'script',
+  'style',
+  'noscript',
+  'iframe',
+  '.ad',
+  '.ads',
+  '.advertisement',
+  '.ad-box',
+  '.ad-banner',
+  '.ad-container',
+  '.ad-wrapper',
+  '.advert',
+  '.sponsor',
+  '.sponsored',
+  '#sponsor',
+  '#ads',
+  '#advertisement',
+  '.cookie-banner',
+  '.cookie-notice',
+  '.consent-banner',
+  '.gdpr',
+  '.newsletter',
+  '.newsletter-signup',
+  '.social-share',
+  '.share-buttons',
+  '.sidebar',
+  '#sidebar',
+];
 
 interface FirecrawlScrapeResult {
   markdown: string;
@@ -54,6 +89,8 @@ export class FirecrawlService {
         body: JSON.stringify({
           url,
           formats: ['markdown'],
+          onlyMainContent: true,
+          excludeTags: EXCLUDE_TAGS,
           timeout: 60000,
           waitFor: 3000,
         }),
@@ -75,8 +112,9 @@ export class FirecrawlService {
       }
 
       const data = await response.json();
+      const rawMarkdown = data.data?.markdown || '';
       return {
-        markdown: data.data?.markdown || '',
+        markdown: cleanScrapedMarkdown(rawMarkdown),
         metadata: data.data?.metadata || {},
       };
     } catch (error) {
@@ -97,6 +135,8 @@ export class FirecrawlService {
           limit,
           scrapeOptions: {
             formats: ['markdown'],
+            onlyMainContent: true,
+            excludeTags: EXCLUDE_TAGS,
             timeout: 60000,
             waitFor: 3000,
           },
@@ -105,8 +145,14 @@ export class FirecrawlService {
 
       if (!response.ok) {
         const error = await response.text();
-        this.logger.error(`Firecrawl crawl error: ${error}`);
-        throw new InternalServerErrorException('Erro ao iniciar crawl no Firecrawl');
+        this.logger.error(`Firecrawl crawl error: ${error}. Executando fallback para scrape individual da raiz.`);
+        // Fallback gracioso para scrape direto da raiz se a documentação for grande demais ou bloqueada
+        const singleScrape = await this.scrape(url, customApiKey);
+        return {
+          jobId: 'fallback-single-scrape',
+          status: 'completed',
+          data: [{ markdown: singleScrape.markdown, metadata: singleScrape.metadata }],
+        };
       }
 
       const data = await response.json();
@@ -135,31 +181,36 @@ export class FirecrawlService {
             break;
           }
           if (checkData.status === 'failed' || checkData.status === 'cancelled') {
-            this.logger.error(`Crawl failed: ${checkData.error}`);
+            this.logger.warn(`Crawl status '${checkData.status}': ${checkData.error || 'Interrompido'}. Resgatando páginas parciais se houver.`);
             break;
           }
         }
       }
 
-      // If loop exited due to time but partial pages were scraped, return what was achieved
+      // If loop exited due to time or cancellation but partial pages were scraped, return what was achieved
       if (pages.length === 0 && latestPartialPages.length > 0) {
-        this.logger.log(`Crawl reached time window, returning ${latestPartialPages.length} partial pages scraped so far.`);
+        this.logger.log(`Crawl concluiu janela de tempo, retornando ${latestPartialPages.length} páginas parciais capturadas com sucesso.`);
         pages = latestPartialPages;
       }
 
       // If crawl returned 0 pages (e.g. single URL or blocked recursion), fallback to direct scrape of the URL
       if (pages.length === 0) {
-        this.logger.log(`Crawl returned 0 pages, falling back to single scrape for ${url}`);
+        this.logger.log(`Crawl retornou 0 páginas, realizando fallback para scrape individual de ${url}`);
         const singleScrape = await this.scrape(url, customApiKey);
         if (singleScrape.markdown) {
           pages = [{ markdown: singleScrape.markdown, metadata: singleScrape.metadata }];
         }
       }
 
+      const cleanedPages = pages.map((page) => ({
+        ...page,
+        markdown: cleanScrapedMarkdown(page.markdown || ''),
+      }));
+
       return {
         jobId,
         status: 'completed',
-        data: pages,
+        data: cleanedPages,
       };
     } catch (error) {
       if (error instanceof InternalServerErrorException) throw error;
@@ -196,6 +247,8 @@ export class FirecrawlService {
         body: JSON.stringify({
           url,
           formats: ['markdown', jsonFormat],
+          onlyMainContent: true,
+          excludeTags: EXCLUDE_TAGS,
           timeout: 60000,
           waitFor: 3000,
         }),
@@ -210,7 +263,7 @@ export class FirecrawlService {
       const data = await response.json();
       return {
         json: data.data?.json || null,
-        markdown: data.data?.markdown || '',
+        markdown: cleanScrapedMarkdown(data.data?.markdown || ''),
         metadata: data.data?.metadata || {},
       };
     } catch (error) {

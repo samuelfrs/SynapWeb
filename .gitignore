@@ -35,8 +35,9 @@ yarn-error.log*
 # Testing
 coverage/
 
-# Documentation (keep only root README.md)
+# Documentation (keep root README.md and RULES.md)
 *.md
 !/README.md
+!/RULES.md
 frontend/*.md
 backend/*.md
