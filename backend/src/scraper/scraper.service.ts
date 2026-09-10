@@ -19,11 +19,93 @@ export class ScraperService {
     private readonly gemini: GeminiService,
   ) {}
 
-  async scrapeUrl(dto: ScrapeUrlDto, customFirecrawlKey?: string) {
+  async scrapeUrl(
+    dto: ScrapeUrlDto,
+    customFirecrawlKey?: string,
+    customGeminiKey?: string,
+  ) {
     const jobId = randomUUID();
     const now = new Date().toISOString();
 
     const result = await this.firecrawl.scrape(dto.url, customFirecrawlKey);
+    let finalMarkdown = result.markdown || '';
+    let finalMetadata: Record<string, any> = { ...(result.metadata || {}) };
+
+    // 1. Verificar se é uma publicação científica e se está restrita por paywall
+    const isAcademicDomain = /ieeexplore\.ieee\.org|dl\.acm\.org|nature\.com|sciencedirect\.com|link\.springer\.com|onlinelibrary\.wiley\.com|tandfonline\.com|pubs\.acs\.org|cell\.com|science\.org|iopscience\.iop\.org/i.test(
+      dto.url,
+    );
+    const isPaywalled = /sign in to continue reading|sign in or purchase|purchase details|purchase pdf|access through your institution|subscription required|buy this article|restricted access/i.test(
+      finalMarkdown,
+    );
+
+    // 2. Extrair DOI da URL, metadados ou conteúdo textual raspado
+    const combinedText = `${dto.url} ${result.metadata?.doi || ''} ${finalMarkdown}`;
+    const doiMatch = combinedText.match(/10\.\d{4,9}\/[-._;()/:A-Za-z0-9]+/);
+    const doi = doiMatch ? doiMatch[0].replace(/[.,;)]+$/, '') : null;
+
+    if ((isAcademicDomain || isPaywalled) && doi) {
+      this.logger.log(`Detectado artigo científico com paywall (DOI: ${doi}). Consultando Unpaywall para versão aberta...`);
+      try {
+        const unpaywallRes = await fetch(
+          `https://api.unpaywall.org/v2/${encodeURIComponent(doi)}?email=synapweb@gmail.com`,
+          { headers: { 'User-Agent': 'SynapWeb/1.0' } },
+        );
+        if (unpaywallRes.ok) {
+          const unpaywallData = await unpaywallRes.json();
+          const openUrl =
+            unpaywallData.best_oa_location?.url_for_pdf ||
+            unpaywallData.best_oa_location?.url;
+
+          if (openUrl) {
+            this.logger.log(`Versão aberta encontrada no Unpaywall: ${openUrl}. Raspando artigo completo...`);
+            try {
+              const oaScrape = await this.firecrawl.scrape(openUrl, customFirecrawlKey);
+              if (oaScrape.markdown && oaScrape.markdown.length > 500) {
+                finalMarkdown = `# 🔓 Artigo Completo Resgatado via Open Access\n\n> **Fonte Original (Paywall):** [${dto.url}](${dto.url})\n> **Versão Aberta Autorizada:** [${openUrl}](${openUrl})\n> **DOI:** ${doi}\n> **Título:** ${unpaywallData.title || result.metadata?.title || 'N/A'}\n\n---\n\n${oaScrape.markdown}`;
+                finalMetadata = {
+                  ...finalMetadata,
+                  isLegalOpenAccess: true,
+                  unpaywallUrl: openUrl,
+                  doi,
+                  title: unpaywallData.title || result.metadata?.title,
+                  hostType: unpaywallData.best_oa_location?.host_type,
+                };
+              }
+            } catch (oaScrapeErr: any) {
+              this.logger.warn(`Falha ao raspar versão aberta do Unpaywall: ${oaScrapeErr.message}`);
+            }
+          }
+        }
+      } catch (unpaywallErr: any) {
+        this.logger.warn(`Erro na consulta ao Unpaywall: ${unpaywallErr.message}`);
+      }
+
+      // Se não havia versão aberta no Unpaywall mas o artigo estava bloqueado por paywall, gerar Dossiê Científico por IA
+      if (!finalMetadata.isLegalOpenAccess && isPaywalled && finalMarkdown.length < 3000) {
+        this.logger.log(`Artigo fechado sem preprint aberto. Gerando síntese de literatura científica por IA para DOI ${doi}...`);
+        try {
+          const synthesis = await this.gemini.synthesizeLiterature(
+            doi,
+            result.metadata?.title,
+            dto.url,
+            customGeminiKey,
+          );
+          if (synthesis && synthesis.length > 200) {
+            finalMarkdown = synthesis;
+            finalMetadata = {
+              ...finalMetadata,
+              isReconstructed: true,
+              doi,
+              originalUrl: dto.url,
+              methodology: 'Consenso de Literatura Científica & Citações',
+            };
+          }
+        } catch (synthErr: any) {
+          this.logger.warn(`Falha na reconstrução de literatura: ${synthErr.message}`);
+        }
+      }
+    }
 
     return {
       id: jobId,
@@ -31,9 +113,9 @@ export class ScraperService {
       mode: 'SCRAPE' as const,
       format: (dto.format || 'MARKDOWN') as 'MARKDOWN' | 'JSON',
       status: 'COMPLETED' as const,
-      contentMd: result.markdown,
+      contentMd: finalMarkdown,
       contentJson: null,
-      metadata: result.metadata || {},
+      metadata: finalMetadata,
       error: null,
       createdAt: now,
       updatedAt: new Date().toISOString(),
@@ -183,9 +265,22 @@ export class ScraperService {
     const jobId = randomUUID();
     const now = new Date().toISOString();
 
-    // Extract DOI from URL if not explicitly provided
-    const doiMatch = dto.url.match(/10\.\d{4,9}\/[-._;()/:A-Za-z0-9]+/);
-    const doi = dto.doi || (doiMatch ? doiMatch[0] : null);
+    // Extract DOI from URL if not explicitly provided, or scrape landing page to resolve DOI
+    let doiMatch = dto.url.match(/10\.\d{4,9}\/[-._;()/:A-Za-z0-9]+/);
+    let doi = dto.doi || (doiMatch ? doiMatch[0].replace(/[.,;)]+$/, '') : null);
+
+    if (!doi && dto.url.startsWith('http')) {
+      try {
+        const landing = await this.firecrawl.scrape(dto.url, customFirecrawlKey);
+        const combined = `${dto.url} ${landing.metadata?.doi || ''} ${landing.markdown}`;
+        const match = combined.match(/10\.\d{4,9}\/[-._;()/:A-Za-z0-9]+/);
+        if (match) {
+          doi = match[0].replace(/[.,;)]+$/, '');
+        }
+      } catch (err: any) {
+        this.logger.warn(`Could not extract DOI from landing page: ${err.message}`);
+      }
+    }
 
     let openAccessMarkdown: string | null = null;
     let openAccessMeta: Record<string, any> = {};

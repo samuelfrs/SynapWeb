@@ -73,6 +73,12 @@ export function ChatPanel({ jobId, content }: ChatPanelProps) {
       });
     } catch (err: any) {
       const errorDetail = err?.message || 'Falha de comunicação com o servidor.';
+      const isKeyError =
+        errorDetail.toLowerCase().includes('chave') ||
+        errorDetail.toLowerCase().includes('gemini') ||
+        errorDetail.toLowerCase().includes('api key') ||
+        errorDetail.toLowerCase().includes('api_key');
+
       setMessages((prev) => {
         const withoutTemp = prev.filter((m) => m.id !== tempUserMsg.id);
         return [
@@ -81,7 +87,11 @@ export function ChatPanel({ jobId, content }: ChatPanelProps) {
             id: `error-${Date.now()}`,
             jobId,
             role: 'assistant',
-            content: `⚠️ **Não foi possível obter resposta:**\n\n${errorDetail}\n\n*Dica: Verifique se o servidor backend está rodando e se sua chave Gemini está configurada em "Chaves de API" no topo da página.*`,
+            content: `⚠️ **Erro ao consultar o Gemini:**\n\n${errorDetail}\n\n${
+              isKeyError
+                ? '💡 **Como resolver:** Clique no botão **"Chaves de API"** no cabeçalho e insira sua chave gratuita gerada no Google AI Studio ([aistudio.google.com](https://aistudio.google.com/app/apikey)). A chave é salva apenas no seu navegador.'
+                : '*Se o problema persistir, tente novamente em alguns instantes.*'
+            }`,
             createdAt: new Date().toISOString(),
           },
         ];

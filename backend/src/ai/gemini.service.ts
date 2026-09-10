@@ -1,14 +1,14 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 
 @Injectable()
 export class GeminiService {
   private readonly logger = new Logger(GeminiService.name);
   private readonly apiKey = process.env.GEMINI_API_KEY || '';
   private readonly candidateModels = [
-    process.env.GEMINI_MODEL || 'gemini-3.6-flash',
-    'gemini-3.1-flash-lite-preview',
-    'gemini-3.5-flash',
-    'gemini-3-flash-preview',
+    process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+    'gemini-3.6-flash',
+    'gemini-2.5-flash-lite',
+    'gemini-1.5-flash',
   ];
 
   async chatWithContent(
@@ -19,8 +19,8 @@ export class GeminiService {
   ): Promise<string> {
     const key = customApiKey || this.apiKey;
     if (!key) {
-      throw new Error(
-        'Nenhuma chave da API Gemini configurada. Configure sua chave em "Chaves de API" no topo da página.',
+      throw new BadRequestException(
+        'Nenhuma chave da API Gemini configurada. Configure sua chave gratuita do Google AI Studio em "Chaves de API" no topo da página.',
       );
     }
 
@@ -73,8 +73,10 @@ export class GeminiService {
       }
     }
 
-    this.logger.error(`All candidate Gemini models failed.`);
-    throw lastError || new Error('Falha ao comunicar com os modelos Gemini.');
+    this.logger.error(`All candidate Gemini models failed: ${lastError?.message}`);
+    throw new BadRequestException(
+      lastError?.message || 'Falha ao comunicar com os modelos Gemini. Verifique a validade da sua chave de API.',
+    );
   }
 
   async extractJsonFromContent(

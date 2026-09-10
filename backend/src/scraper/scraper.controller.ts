@@ -27,8 +27,9 @@ export class ScraperController {
   async scrapeUrl(
     @Body() dto: ScrapeUrlDto,
     @Headers('x-firecrawl-key') customFirecrawlKey?: string,
+    @Headers('x-gemini-key') customGeminiKey?: string,
   ) {
-    return this.scraperService.scrapeUrl(dto, customFirecrawlKey);
+    return this.scraperService.scrapeUrl(dto, customFirecrawlKey, customGeminiKey);
   }
 
   @Post('crawl')

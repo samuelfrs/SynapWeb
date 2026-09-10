@@ -1,7 +1,7 @@
 /**
  * Higienizador Cirúrgico de Markdown para Scrape e Crawl
  * Remove anúncios, banners, imagens publicitárias, pixels de rastreamento,
- * caixas de newsletter, avisos de cookies e elementos fora do conteúdo da página.
+ * caixas de newsletter, avisos de cookies, botões de UI e rodapés de portais (ex: IEEE, ACM, Springer).
  */
 
 // Domínios conhecidos de redes de anúncios, tracking e telemetria
@@ -65,6 +65,7 @@ const AD_ALT_PATTERNS = [
   /^propaganda$/i,
   /^compartilhe$/i,
   /^share on/i,
+  /^close message button$/i,
 ];
 
 function isAdUrl(url: string): boolean {
@@ -72,7 +73,6 @@ function isAdUrl(url: string): boolean {
   const lower = url.toLowerCase();
   if (AD_DOMAINS.some((domain) => lower.includes(domain))) return true;
   if (AD_URL_PATTERNS.some((pattern) => pattern.test(url))) return true;
-  // 1x1 transparent tracking pixels
   if (lower.startsWith('data:image/gif;base64,r0lgodlhaqab') || lower.startsWith('data:image/png;base64,ivborw0kggoaaaansu')) return true;
   return false;
 }
@@ -82,6 +82,21 @@ function isAdAltText(alt: string): boolean {
   const trimmed = alt.trim();
   return AD_ALT_PATTERNS.some((pattern) => pattern.test(trimmed));
 }
+
+// Cabeçalhos que iniciam rodapé de conta ou navegação irrelevante em portais
+const FOOTER_SECTION_START = [
+  /^#*\s*ieee account\b/i,
+  /^#*\s*my account\b/i,
+  /^#*\s*minha conta\b/i,
+  /^#*\s*purchase details\b/i,
+  /^#*\s*profile information\b/i,
+  /^#*\s*need help\??\b/i,
+  /^#*\s*about ieee xplore\b/i,
+  /^#*\s*about us\b/i,
+  /^#*\s*terms of use\b/i,
+  /^#*\s*privacy & opting out of cookies\b/i,
+  /^#*\s*a not-for-profit organization, ieee\b/i,
+];
 
 /**
  * Remove anúncios, banners, pixels e textos espúrios do Markdown extraído.
@@ -116,22 +131,44 @@ export function cleanScrapedMarkdown(rawMarkdown: string): string {
     return match;
   });
 
-  // 4. Remover links de rastreamento ou afiliados puros: [texto](url)
+  // 4. Remover links de rastreamento, botões de fechar e alertas: [texto](url)
   text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, anchorText, url) => {
+    const trimmedAnchor = anchorText.trim().toLowerCase();
+    if (
+      trimmedAnchor === 'close message button' ||
+      trimmedAnchor === 'manage content alerts' ||
+      trimmedAnchor === 'add to citation alerts' ||
+      trimmedAnchor === 'save to alerts' ||
+      trimmedAnchor === 'download references' ||
+      trimmedAnchor === 'request permissions' ||
+      trimmedAnchor === 'change username/password' ||
+      trimmedAnchor === 'update address' ||
+      trimmedAnchor === 'payment options' ||
+      trimmedAnchor === 'order history' ||
+      trimmedAnchor === 'view purchased documents' ||
+      trimmedAnchor === 'communications preferences' ||
+      trimmedAnchor === 'profession and education' ||
+      trimmedAnchor === 'technical interests' ||
+      trimmedAnchor === 'about ieee xplore' ||
+      trimmedAnchor === 'terms of use' ||
+      trimmedAnchor === 'nondiscrimination policy' ||
+      trimmedAnchor === 'privacy & opting out of cookies'
+    ) {
+      return '';
+    }
     if (isAdUrl(url)) {
-      // Se o texto for apenas genérico de ad, remove por completo
       if (isAdAltText(anchorText)) return '';
-      // Caso contrário, mantém o texto sem o link de anúncio
       return anchorText;
     }
     return match;
   });
 
-  // 5. Linhas e títulos isolados que representam marcadores de anúncios e consentimento
+  // 5. Linhas e títulos isolados que representam marcadores de anúncios, cookies e botões de interface
   const lines = text.split('\n');
   const cleanedLines: string[] = [];
 
-  for (let line of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     const trimmed = line.trim();
     const cleanLineContent = trimmed
       .replace(/^#{1,6}\s*/, '')
@@ -139,6 +176,38 @@ export function cleanScrapedMarkdown(rawMarkdown: string): string {
       .replace(/^_+|_+$/g, '')
       .trim()
       .toLowerCase();
+
+    // Se detectamos o início de uma seção de rodapé de conta ou suporte (ex: IEEE Account, Need Help?), descartamos o restante do rodapé
+    if (FOOTER_SECTION_START.some((re) => re.test(trimmed))) {
+      break;
+    }
+
+    // "Skip to main content"
+    if (/^skip to (main )?content/i.test(trimmed)) {
+      continue;
+    }
+
+    // Botões de interface repetitivos de portais
+    const uiButtons = [
+      'cite this',
+      'download pdf',
+      'download references',
+      'request permissions',
+      'save to alerts',
+      'manage content alerts',
+      'add to citation alerts',
+      'show more',
+      'show less',
+      'sign in or purchase',
+      'sign in to continue reading',
+      'references is not available for this document.',
+      'references is not available for this document',
+      'all authors',
+    ];
+
+    if (uiButtons.includes(cleanLineContent)) {
+      continue;
+    }
 
     // Palavras-chave isoladas de anúncio
     const adKeywords = [
@@ -160,7 +229,7 @@ export function cleanScrapedMarkdown(rawMarkdown: string): string {
       continue;
     }
 
-    // Padrões de aviso de cookies / consentimento / newsletter
+    // Padrões de aviso de cookies / consentimento / newsletter / copyright de rodapé
     if (
       cleanLineContent.includes('aceitar todos os cookies') ||
       cleanLineContent.includes('accept all cookies') ||
@@ -170,7 +239,12 @@ export function cleanScrapedMarkdown(rawMarkdown: string): string {
       cleanLineContent.includes('manage cookie preferences') ||
       cleanLineContent.includes('inscreva-se na nossa newsletter') ||
       cleanLineContent.includes('subscribe to our newsletter') ||
-      cleanLineContent.includes('cadastre seu e-mail')
+      cleanLineContent.includes('cadastre seu e-mail') ||
+      cleanLineContent.includes('a not-for-profit organization') ||
+      cleanLineContent.includes('all rights reserved') ||
+      cleanLineContent.includes('todos os direitos reservados') ||
+      cleanLineContent.startsWith('© copyright') ||
+      cleanLineContent.startsWith('copyright ©')
     ) {
       continue;
     }
