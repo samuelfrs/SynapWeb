@@ -1,6 +1,6 @@
 # SynapWeb — Web-to-LLM Intelligence Engine
 
-> Motor inteligente de Web Scraping & Crawling que converte qualquer site, documentação técnica, PDF ou captura de tela em **Markdown limpo** ou **JSON estruturado** pronto para alimentar LLMs e pipelines de RAG, com chat integrado via Google Gemini e arquitetura **Local-First (Zero Database)**.
+> Motor inteligente de Web Scraping, Crawling & Síntese Científica que converte qualquer site, documentação técnica, PDF, captura de tela ou artigo científico em **Markdown limpo** ou **JSON estruturado** pronto para alimentar LLMs e pipelines de RAG, com chat contextual via Google Gemini e arquitetura **Local-First (Zero Database)**.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new)
 [![GitHub License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -14,22 +14,90 @@
 
 ---
 
-## ✨ Funcionalidades Principais
+## ✨ Funcionalidades Completas
 
-- 🌐 **Scrape URL:** Extrai o conteúdo de uma página única ou link direto para PDF em Markdown limpo para LLMs, removendo menus, banners, anúncios e scripts.
-- 📎 **Anexar Arquivos & Print Direto (Ctrl+V):** Arraste e solte arquivos locais (PDFs, imagens PNG/JPG/WebP, TXT, CSV, Markdown, JSON, código TS/JS/PY/HTML) ou aperte `Ctrl+V` em qualquer lugar da tela para colar um print de tela, processado via Gemini Multimodal com suporte a payloads de até 50MB.
-- 🔬 **Engenharia Reversa Acadêmica & Resgate Anti-Bot:** Quando links científicos são protegidos por paywall ou bloqueados por proteção anti-bot (como Cloudflare), o SynapWeb identifica o DOI, busca preprints gratuitos e abertos autorizados via Unpaywall API e gera uma reconstrução sintética de literatura com base no consenso científico e citações acadêmicas.
-- 📁 **Crawl Docs:** Varre documentações inteiras recursivamente em lote (até 10 subpáginas) e consolida em um documento único pronto para RAG.
-- 🏷️ **Extrair JSON (com IA):** Extração de dados estruturados a partir de prompts em linguagem natural (ex: *"Extraia título, resumo, tópicos e preços"*) com fallback inteligente via Google Gemini.
-- 💬 **Chat RAG com o Documento:** Converse diretamente com o conteúdo extraído usando Google Gemini, com respostas fundamentadas estritamente no texto, envio seguro e otimizado de contexto textual e memória contextual.
-- ⚡ **Ações Rápidas no Chat:** Sugestões de 1 clique para gerar resumo executivo, extrair conclusões/dados, traduzir ou montar um FAQ completo.
-- ✨ **Copiar Pronto para LLM (Dual: Resumido vs Completo):**
-  - **⚡ Copiar p/ LLM (Resumido):** Limpa formatações ruidosas, remove links redundantes e sintetiza os dados em um teto seguro de **~2.100 tokens (~8.500 caracteres)**, cabendo com folga em chats do **ChatGPT gratuito, Claude, DeepSeek ou Cursor**.
-  - **📜 Copiar p/ LLM (Completo):** Mantém o documento integral com prompt de sistema otimizado para modelos com janelas amplas (GPT-4o, Claude Pro, Gemini).
-- 🔑 **BYOK (Bring Your Own Key):** Modal no cabeçalho que permite a qualquer visitante conectar suas próprias chaves gratuitas do Firecrawl e Gemini, viabilizando deploy público sem custos para o proprietário.
-- 💡 **Guia Interativo ("Como Usar"):** Tutorial passo a passo integrado na página inicial e no cabeçalho para guiar novos usuários.
-- 💾 **Arquitetura Local-First:** Histórico e chats salvos no `localStorage` do navegador com total privacidade, além de botões de **Exportar/Importar Backup em JSON**.
-- 📊 **Contador de Tokens & Métricas:** Estimativa em tempo real da contagem de tokens totais e da versão resumida.
+### 🌐 1. Scrape URL Cirúrgico
+- Extrai conteúdo de páginas da web ou links diretos para PDFs em Markdown perfeitamente formatado para LLMs.
+- Higienização automática: remove elementos ruidosos como barras de navegação, modais, anúncios, rodapés e scripts rastreadores.
+
+### 📁 2. Crawl Recursivo de Documentações (Crawl Docs)
+- Mapeia e varre recursivamente documentações técnicas inteiras em lote (com limite configurável de até 50 subpáginas).
+- Consolida o conhecimento de várias páginas em um único documento unificado, estruturado para contextualização rápida de LLMs ou indexação vetorial.
+
+### 🏷️ 3. Extração Estruturada em JSON (com IA)
+- Extração de dados complexos através de prompts em linguagem natural (ex: *"Extraia título, data de publicação, autores, metodologia, resultados e métricas"*).
+- Processamento híbrido com Firecrawl v2 e fallback inteligente via Google Gemini para garantir retorno de JSON estritamente tipado e válido.
+
+### 📎 4. Upload de Arquivos & Captura Direta via Ctrl+V (Multimodal)
+- **Drag & Drop e Seletor:** Suporte a arquivos locais em múltiplos formatos: PDF, imagens (PNG, JPG, WebP), TXT, CSV, Markdown, JSON e código-fonte (TypeScript, JavaScript, Python, HTML).
+- **Print de Tela Instantâneo (Clipboard):** Aperte `Ctrl+V` em qualquer lugar da tela para colar uma captura de tela e extrair dados visuais, tabelas ou diagramas.
+- **Capacidade Elevada:** Suporte a arquivos e payloads Base64 de até **50MB** processados pelo Gemini Multimodal.
+
+### 🔬 5. Reconstrução de Papers & Consulta no Meio Científico
+- **Desbloqueio Legal via Open Access:** Consulta automatizada do DOI do artigo na API do Unpaywall para localizar e raspar preprints e versões abertas autorizadas (arXiv, bioRxiv, repositórios institucionais).
+- **Dossiê de Reconstrução por Literatura & Citações:** Caso o artigo esteja sob paywall restrito ou bloqueio anti-bot (Cloudflare/WAF), o motor utiliza a literatura científica indexada, papers derivados e consenso acadêmico para reconstruir a estrutura integral do estudo (tese, metodologia, métricas e recepção acadêmica).
+- **Botão de Resgate Inteligente:** Se um scrape sofrer bloqueio anti-bot ou restrição de acesso em links acadêmicos, a interface exibe sugestão automática de 1 clique para ativar a Reconstrução Científica.
+
+### 💬 6. Chat RAG com o Documento
+- Converse interativamente com o documento extraído usando Google Gemini (`gemini-3.6-flash`, `gemini-3.1-flash-lite-preview`, `gemini-3.5-flash` em cascata).
+- Respostas fundamentadas estritamente no conteúdo extraído, com retenção de memória de conversação.
+- **Ações Rápidas em 1 Clique:** Atalhos rápidos para gerar resumo executivo, sintetizar conclusões, traduzir ou elaborar um FAQ completo.
+
+### ⚡ 7. Otimização e Cópia Especializada para LLMs (Dual Mode)
+- **⚡ Copiar p/ LLM (Resumido):** Sanitiza links irrelevantes, elimina imagens e formatações pesadas e aplica algoritmo de excerto inteligente (início estruturante + desfecho com conclusões) delimitado a **~2.100 tokens (~8.500 caracteres)**. Garante compatibilidade imediata com limites de contexto de chats gratuitos como ChatGPT Free, Claude Free, DeepSeek ou extensões de IDE como Cursor.
+- **📜 Copiar p/ LLM (Completo):** Mantém o conteúdo na íntegra com prompt de sistema pronto para modelos de contexto amplo (GPT-4o, Claude 3.5 Sonnet, Gemini 1.5 Pro).
+- **Download em Formato Bruto:** Botão para download direto do arquivo em `.md` ou `.json`.
+
+### 🔑 8. Arquitetura BYOK (Bring Your Own Key)
+- Modal integrado no cabeçalho permitindo aos usuários informarem suas próprias chaves de API da **Firecrawl** e **Google Gemini**.
+- As chaves são mantidas exclusivamente no navegador (`localStorage`) e enviadas via cabeçalhos HTTP seguros (`X-Firecrawl-Key`, `X-Gemini-Key`), permitindo que a aplicação seja hospedada publicamente com custo zero para o mantenedor.
+
+### 💾 9. Arquitetura Local-First & Privacidade de Dados
+- Histórico completo de jobs, conteúdos e sessões de chat mantidos diretamente no navegador (`localStorage`), sem dependência de banco de dados centralizado.
+- **Backup e Portabilidade:** Ferramentas nativas para exportar o histórico completo em JSON e importar em outro dispositivo ou navegador.
+- Algoritmo de limpeza LRU inteligente para evitar estouro da cota de armazenamento local.
+
+---
+
+## 🎓 Uso no Meio Científico: Consulta, Pesquisa e Reconstrução de Papers
+
+O SynapWeb foi desenhado como um aliado indispensável para **pesquisadores, acadêmicos, estudantes de pós-graduação e cientistas de dados**. A rotina científica frequentemente enfrenta barreiras como *paywalls*, interfaces cheias de scripts pesados, documentos complexos e bloqueios de acesso que atrasam revisões bibliográficas.
+
+### 1. Resgate Aberto e Legítimo (Open Access / Unpaywall)
+Quando a URL de uma publicação (Nature, IEEE, Springer, Elsevier, etc.) é fornecida:
+- O SynapWeb detecta o **DOI (Digital Object Identifier)** automaticamente via expressão regular ou metadados da página.
+- Faz uma requisição à base de dados aberta do **Unpaywall** para verificar se existe uma versão legalmente disponível (preprints no arXiv, PubMed Central, repositórios de universidades ou versões publicadas autorizadas com licença Creative Commons).
+- Se encontrada, o SynapWeb recupera o artigo completo e o converte em Markdown estruturado, liberando o texto para leitura e chat imediato.
+
+### 2. Reconstrução Sintética por Literatura & Consenso Científico
+Quando um artigo é fechado por paywall rígido ou bloqueado por firewalls de bot:
+- O motor acadêmico sintetiza a literatura correlata usando inteligência artificial fundamentada no conhecimento consolidado da comunidade científica.
+- Em vez de alucinar o texto restrito, o modelo mapeia como o paper é citado, discutido e referenciado por outros autores em trabalhos públicos indexados.
+- É gerado um **Dossiê de Reconstrução Científica** padronizado, composto por:
+  1. **Identificação Formal:** DOI, título canônico, autores e área de estudo.
+  2. **Proposta Central & Problema:** A dor que motivou a pesquisa e a hipótese apresentada.
+  3. **Metodologia & Arquitetura:** Algoritmos, conjuntos de dados, modelos teóricos e pipelines experimentais registrados pela literatura.
+  4. **Principais Descobertas & Métricas:** Resultados quantitativos e qualitativos relatados pelos pares.
+  5. **Consenso Científico & Repercussão:** Como a comunidade avaliou a publicação, críticas relevantes e derivações posteriores.
+  6. **Leituras Recomendadas & Preprints Correlatos:** Sugestões de trabalhos abertos para leitura complementar.
+
+### 3. Extração Estruturada de Metodologias e Resultados (JSON)
+Em revisões sistemáticas da literatura (SLR), pesquisadores podem utilizar a aba **Extrair JSON** com schemas sob medida:
+```json
+{
+  "titulo": "string",
+  "amostra_avaliada": "number",
+  "metodologia": "string",
+  "metricas_chave": ["string"],
+  "conclusoes_principais": "string"
+}
+```
+Isso possibilita consolidar tabelas comparativas de dezenas de artigos com agilidade.
+
+### 4. RAG Local para Sabatinar Artigos
+Através do chat contextual integrado:
+- O pesquisador pode fazer perguntas complexas diretamente ao artigo: *"Qual foi o tamanho amostral do grupo de controle?"*, *"Quais limitações os próprios autores reconhecem?"*, *"Compare esta metodologia com o estado da arte tradicional"*.
+- As respostas são restritas ao contexto do estudo, acelerando revisões e escrita de artigos científicos.
 
 ---
 
@@ -37,11 +105,12 @@
 
 | Camada | Tecnologia |
 |---|---|
-| **Frontend** | Next.js 16 (App Router + Turbopack), React 19, Tailwind CSS 4, Base UI / Shadcn UI, Lucide Icons |
-| **Backend** | NestJS 11, Express (body parser configurado para até 50MB), TypeScript, Arquitetura Stateless / Serverless |
-| **Scraping** | Firecrawl v2 API (Scrape, Crawl e Extração JSON) |
+| **Frontend** | Next.js 16 (App Router + Turbopack), React 19, Tailwind CSS 4, Radix UI / Shadcn UI, Lucide Icons |
+| **Backend** | NestJS 11, Express (body parser configurado para 50MB), TypeScript, Arquitetura Stateless / Serverless |
+| **Scraping** | Firecrawl v2 API (Scrape, Crawl e Extração de Entidades JSON) |
 | **Inteligência Artificial** | Google Gemini API (`gemini-3.6-flash`, `gemini-3.1-flash-lite-preview`, `gemini-3.5-flash` em cadeia de fallback) |
-| **Armazenamento** | LocalStorage no navegador (Local-First com retenção LRU) |
+| **Descoberta Científica** | Unpaywall REST API (rastreamento de DOIs e links Open Access autorizados) |
+| **Armazenamento** | LocalStorage no navegador (Local-First com retenção LRU e import/export) |
 | **Deploy** | Vercel (Monorepo Serverless) |
 
 ---
@@ -58,7 +127,7 @@ SynapWeb/
 │   ├── src/
 │   │   ├── main.ts           # Entrypoint dual (local 3001 e Vercel Serverless com body parser de 50MB)
 │   │   ├── scraper/          # Endpoints de Scrape, Crawl, Extração JSON, Upload e Reconstrução Acadêmica
-│   │   └── ai/               # Chat RAG e processamento multimodal com Gemini
+│   │   └── ai/               # Chat RAG, síntese bibliográfica e processamento multimodal com Gemini
 │   ├── vercel.json           # Configuração de deploy serverless
 │   ├── tsconfig.json         # TypeScript ~6.0.0
 │   └── .env.example          # Exemplo de variáveis locais
